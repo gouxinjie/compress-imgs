@@ -25,6 +25,8 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(157, 103, 255, 0.72) rgba(11, 15, 39, 0.82);
 }
 
 body {
@@ -52,6 +54,25 @@ body::before {
     radial-gradient(circle at 94% 36%, rgba(255, 255, 255, 0.8) 0 1px, transparent 1.6px),
     radial-gradient(circle at 26% 82%, rgba(255, 255, 255, 0.7) 0 1px, transparent 1.3px);
   opacity: 0.5;
+}
+
+body::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+body::-webkit-scrollbar-track {
+  background: rgba(11, 15, 39, 0.82);
+}
+
+body::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(11, 15, 39, 0.82);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(116, 73, 255, 0.9), rgba(179, 98, 255, 0.92));
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(132, 92, 255, 0.95), rgba(191, 118, 255, 0.95));
 }
 
 a {
@@ -547,6 +568,19 @@ img {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.task-table::-webkit-scrollbar {
+  height: 8px;
+}
+
+.task-table::-webkit-scrollbar-track {
+  background: rgba(13, 18, 44, 0.9);
+}
+
+.task-table::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(112, 76, 255, 0.86), rgba(171, 94, 255, 0.9));
+}
+
 .task-table-head,
 .task-row {
   display: grid;
@@ -835,14 +869,77 @@ img {
   }
 }
 
+@media (max-width: 1240px) {
+  .page-shell {
+    width: min(1180px, calc(100% - 40px));
+  }
+
+  .upload-card {
+    grid-template-columns: minmax(340px, 0.92fr) minmax(0, 1fr);
+    gap: 18px;
+    min-height: 244px;
+    padding: 18px 24px;
+  }
+
+  .upload-visual {
+    max-width: 332px;
+  }
+
+  .upload-main {
+    width: min(460px, 100%);
+    margin-left: 0;
+  }
+
+  .feature-row {
+    gap: 12px;
+  }
+
+  .feature-pill {
+    min-height: 82px;
+    padding: 12px 16px;
+  }
+
+  .task-board {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .task-sidebar {
+    padding: 14px 14px 10px;
+  }
+
+  .task-table-head,
+  .task-row {
+    grid-template-columns: minmax(0, 1.7fr) 104px minmax(170px, 1fr) 52px;
+    gap: 12px;
+  }
+}
+
 @media (max-width: 1100px) {
   .feature-row,
   .result-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .upload-card {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    min-height: auto;
+    padding: 20px 22px 24px;
+  }
+
+  .upload-visual {
+    max-width: 360px;
+    justify-self: center;
+  }
+
+  .upload-main {
+    width: min(100%, 620px);
+    justify-self: center;
+    text-align: left;
+  }
+
   .task-board,
-  .upload-card,
   .result-grid {
     grid-template-columns: 1fr;
   }
@@ -851,12 +948,22 @@ img {
     order: 2;
   }
 
+  .task-table {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .task-table-head,
+  .task-row {
+    min-width: 700px;
+  }
+
   .result-card {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 880px) {
   .page-shell {
     width: min(100% - 24px, 1240px);
     padding-top: 14px;
@@ -875,24 +982,6 @@ img {
     justify-content: flex-end;
   }
 
-  .brand {
-    font-size: 1.44rem;
-  }
-
-  .upload-card {
-    padding: 20px;
-    min-height: auto;
-  }
-
-  .task-table-head {
-    display: none;
-  }
-
-  .task-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
   .summary-meta,
   .result-card-body dl {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -902,5 +991,45 @@ img {
   .primary-link,
   .secondary-link {
     width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-shell {
+    width: min(100% - 24px, 1240px);
+    padding-top: 14px;
+  }
+
+  .brand {
+    font-size: 1.44rem;
+  }
+
+  .upload-card {
+    padding: 18px 16px 20px;
+    min-height: auto;
+    border-radius: 28px;
+  }
+
+  .upload-card::after {
+    inset: 10px;
+    border-radius: 22px;
+  }
+
+  .upload-main {
+    width: 100%;
+  }
+
+  .upload-copy h2 {
+    font-size: clamp(1.08rem, 4.8vw, 1.34rem);
+  }
+
+  .task-table-head {
+    display: none;
+  }
+
+  .task-row {
+    min-width: 100%;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
