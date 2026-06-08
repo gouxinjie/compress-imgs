@@ -21,7 +21,7 @@
 - `FastAPI`
 - `Jinja2Templates`
 - 原生 `JavaScript`
-- `SCSS + CSS`
+- `CSS`
 - `tinify`
 - `Pillow`
 
@@ -79,7 +79,6 @@ app/
   templates/
   static/
     css/
-    scss/
     js/
   models/
 split-assets-fixed/
@@ -90,8 +89,7 @@ start.bat
 
 ## 开发说明
 
-- `app/static/scss/app.scss` 是样式维护源
-- `app/static/css/app.css` 是运行时加载文件
+- `app/static/css/app.css` 是当前样式维护文件，直接修改它
 - 当前实现以 MVP 为主，优先保证可运行和可迭代
 - 中屏和移动端已做基础适配，避免内容被硬挤压变形
 
@@ -99,7 +97,7 @@ start.bat
 
 - 继续提升首页与设计稿的像素级还原
 - 完善异常态、空态和上传失败提示
-- 进一步整理样式构建流程
+- 继续整理样式结构，控制页面复杂度
 
 ## License
 

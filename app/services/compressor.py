@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
@@ -8,7 +9,7 @@ from app.config import Settings
 
 try:
     import tinify
-    from tinify.errors import AccountError, ClientError, ServerError, ConnectionError as TinifyConnectionError
+    from tinify.errors import AccountError, ClientError, ConnectionError as TinifyConnectionError, ServerError
 except ImportError:  # pragma: no cover
     tinify = None
     AccountError = ClientError = ServerError = TinifyConnectionError = Exception
@@ -30,9 +31,11 @@ class Compressor:
     def compress(self, source_path: Path, target_path: Path) -> None:
         if tinify and self.settings.tinify_api_key:
             self._compress_with_tinify(source_path, target_path)
+            self._ensure_smaller_or_equal(source_path, target_path)
             return
 
         self._compress_with_pillow(source_path, target_path)
+        self._ensure_smaller_or_equal(source_path, target_path)
 
     def _compress_with_tinify(self, source_path: Path, target_path: Path) -> None:
         try:
@@ -50,19 +53,29 @@ class Compressor:
         except TinifyConnectionError as exc:
             raise CompressionError("server_error", "无法连接压缩服务。") from exc
 
+    def _ensure_smaller_or_equal(self, source_path: Path, target_path: Path) -> None:
+        if not target_path.exists():
+            return
+
+        if target_path.stat().st_size <= source_path.stat().st_size:
+            return
+
+        shutil.copyfile(source_path, target_path)
+
     def _compress_with_pillow(self, source_path: Path, target_path: Path) -> None:
         suffix = source_path.suffix.lower()
         save_kwargs: dict[str, object] = {"optimize": True}
 
         if suffix in {".jpg", ".jpeg"}:
             save_kwargs["quality"] = 82
+            save_kwargs["progressive"] = True
             format_name = "JPEG"
         elif suffix == ".png":
+            save_kwargs["compress_level"] = 9
             format_name = "PNG"
         elif suffix == ".webp":
             save_kwargs["quality"] = 82
-            method = 6
-            save_kwargs["method"] = method
+            save_kwargs["method"] = 6
             format_name = "WEBP"
         else:
             raise CompressionError("invalid_file_type", "仅支持 PNG、JPG、JPEG、WEBP。")

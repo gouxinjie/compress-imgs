@@ -5,7 +5,7 @@
 {% block content %}
 <main class="result-page">
   <section class="result-hero">
-    <div>
+    <div class="result-hero-copy">
       <p class="eyebrow">任务结果</p>
       <h1>压缩完成，结果已生成</h1>
       <p>任务编号：{{ task["task_id"] }}</p>
@@ -13,7 +13,13 @@
     <div class="result-hero-actions">
       <a class="secondary-link" href="/">继续压缩</a>
       {% if task["zip_download_path"] %}
-      <a class="primary-link" href="{{ task["zip_download_path"] }}">下载全部 ZIP</a>
+      <a
+        class="primary-link"
+        href="{{ task["zip_download_path"] }}"
+        data-download-key="zip:{{ task["task_id"] }}"
+        data-loading-text="下载中..."
+        data-downloaded-text="已下载 ZIP"
+      >下载全部 ZIP</a>
       {% endif %}
     </div>
   </section>
@@ -55,6 +61,7 @@
         <img src="/assets/icon_image.png" alt="">
         {% endif %}
       </div>
+
       <div class="result-card-body">
         <div class="result-card-head">
           <strong>{{ item["filename"] }}</strong>
@@ -62,7 +69,8 @@
             {% if item["status"] == "success" %}成功{% elif item["status"] == "failed" %}失败{% else %}处理中{% endif %}
           </span>
         </div>
-        <dl>
+
+        <dl class="result-metrics">
           <div>
             <dt>原始大小</dt>
             <dd>{{ item["original_size"] | filesize }}</dd>
@@ -76,14 +84,29 @@
             <dd>{% if item["ratio"] is not none %}{{ "%.2f"|format(item["ratio"]) }}%{% else %}-{% endif %}</dd>
           </div>
         </dl>
-        {% if item["status"] == "success" and item["download_path"] %}
-        <a class="result-download" href="{{ item["download_path"] }}">下载图片</a>
-        {% else %}
+
+        {% if item["status"] != "success" %}
         <p class="result-error">{{ item["error_message"] or "正在处理中，请稍候。" }}</p>
+        {% endif %}
+      </div>
+
+      <div class="result-card-actions">
+        {% if item["status"] == "success" and item["download_path"] %}
+        <a
+          class="result-download"
+          href="{{ item["download_path"] }}"
+          data-download-key="item:{{ task["task_id"] }}:{{ loop.index0 }}"
+          data-loading-text="下载中..."
+          data-downloaded-text="已下载"
+        >下载图片</a>
         {% endif %}
       </div>
     </article>
     {% endfor %}
   </section>
 </main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/result.js') }}"></script>
 {% endblock %}

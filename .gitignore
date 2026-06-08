@@ -3,6 +3,8 @@ __pycache__/
 .env
 .venv/
 venv/
+node_modules/
+work/tmp/
 work/tmp/uploads/
 work/tmp/compressed/
 work/tmp/zips/

@@ -26,14 +26,26 @@ async def create_compress_task(
 
     client_ip = request.client.host if request.client else "unknown"
     if not limiter.allow(client_ip):
-        raise HTTPException(status_code=429, detail={"code": "rate_limited", "message": "请求过于频繁，请稍后再试。"})
+        raise HTTPException(
+            status_code=429,
+            detail={"code": "rate_limited", "message": "请求过于频繁，请稍后再试。"},
+        )
 
     cleanup_expired_files(settings)
 
     if not files:
-        raise HTTPException(status_code=400, detail={"code": "empty_files", "message": "请至少选择 1 张图片。"})
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "empty_files", "message": "请至少选择 1 张图片。"},
+        )
     if len(files) > settings.max_files_per_upload:
-        raise HTTPException(status_code=400, detail={"code": "too_many_files", "message": f"单次最多上传 {settings.max_files_per_upload} 张图片。"})
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "too_many_files",
+                "message": f"单次最多上传 {settings.max_files_per_upload} 张图片。",
+            },
+        )
 
     task_id = file_store.generate_task_id()
     upload_dir, compressed_dir = file_store.prepare_task_dirs(task_id)
@@ -46,7 +58,13 @@ async def create_compress_task(
         for upload in files:
             extension = Path(upload.filename or "").suffix.lower().lstrip(".")
             if extension not in settings.allowed_extensions:
-                raise HTTPException(status_code=400, detail={"code": "invalid_file_type", "message": "仅支持 PNG、JPG、JPEG、WEBP。"})
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "code": "invalid_file_type",
+                        "message": "仅支持 PNG、JPG、JPEG、WEBP。",
+                    },
+                )
 
             saved = await file_store.save_upload(upload, upload_dir, existing_names)
             saved_paths.append(saved["path"])
@@ -54,9 +72,21 @@ async def create_compress_task(
             total_size += file_size
 
             if file_size > settings.max_file_size_bytes:
-                raise HTTPException(status_code=400, detail={"code": "file_too_large", "message": f"单张图片不能超过 {settings.max_file_size_mb} MB。"})
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "code": "file_too_large",
+                        "message": f"单张图片不能超过 {settings.max_file_size_mb} MB。",
+                    },
+                )
             if total_size > settings.max_request_size_bytes:
-                raise HTTPException(status_code=400, detail={"code": "request_too_large", "message": f"本次上传总大小不能超过 {settings.max_request_size_mb} MB。"})
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "code": "request_too_large",
+                        "message": f"本次上传总大小不能超过 {settings.max_request_size_mb} MB。",
+                    },
+                )
 
             items.append(
                 {
@@ -172,7 +202,7 @@ async def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path
                     "download_path": None,
                     "preview_path": None,
                     "error_code": "server_error",
-                    "error_message": "服务器暂时不可用，请稍后再试。",
+                    "error_message": "压缩服务暂时不可用，请稍后再试。",
                 },
             )
 
