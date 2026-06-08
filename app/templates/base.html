@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ settings.app_name }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="page-noise"></div>
+      <header class="site-header">
+        <a class="brand" href="/">
+          <span class="brand-mark"></span>
+          <span class="brand-text">Compress<span>Imgs</span></span>
+        </a>
+        <nav class="site-nav">
+          <a href="#features" class="nav-link">
+            <img src="/assets/icon_shield.png" alt="" width="16" height="16">
+            <span>安全隐私</span>
+          </a>
+          <a href="#help" class="nav-link">
+            <img src="/assets/icon_help.png" alt="" width="16" height="16">
+            <span>使用帮助</span>
+          </a>
+          <a href="#upload" class="launch-button">
+            <img src="/assets/icon_flash.png" alt="" width="14" height="14">
+            <span>开 始 项 目</span>
+          </a>
+        </nav>
+      </header>
+      {% block content %}{% endblock %}
+    </div>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>
