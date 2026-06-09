@@ -32,21 +32,37 @@ def cleanup_expired_files(settings: Settings) -> None:
             continue
 
         task_id = task_file.stem
-        task_file.unlink(missing_ok=True)
-        _remove_dir(settings.uploads_dir / task_id)
-        _remove_dir(settings.compressed_dir / task_id)
+        uploads_removed = _remove_dir(settings.uploads_dir / task_id)
+        compressed_removed = _remove_dir(settings.compressed_dir / task_id)
         zip_path = settings.zips_dir / f"{task_id}.zip"
-        if zip_path.exists():
-            zip_path.unlink(missing_ok=True)
+        zip_removed = _safe_unlink(zip_path) if zip_path.exists() else True
+
+        if uploads_removed and compressed_removed and zip_removed:
+            _safe_unlink(task_file)
 
 
-def _remove_dir(path: Path) -> None:
+def _remove_dir(path: Path) -> bool:
     if not path.exists():
-        return
+        return True
+
+    fully_removed = True
     for child in path.iterdir():
-        if child.is_file():
-            child.unlink(missing_ok=True)
+        if child.is_dir():
+            fully_removed = _remove_dir(child) and fully_removed
+            continue
+        if not _safe_unlink(child):
+            fully_removed = False
+
     try:
         path.rmdir()
     except OSError:
-        return
+        return False
+    return fully_removed
+
+
+def _safe_unlink(path: Path) -> bool:
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:
+        return False
+    return True

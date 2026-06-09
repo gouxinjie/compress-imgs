@@ -105,11 +105,44 @@
     return rowOrder.map((rowKey) => sessionRows.get(rowKey)).filter(Boolean);
   }
 
+  function setBoardHeading(mode, processed = 0, total = 0) {
+    boardTitle.classList.remove("is-processing", "is-completed", "is-idle", "is-failed");
+
+    if (mode === "processing") {
+      boardTitle.classList.add("is-processing");
+      boardTitle.innerHTML = `正在处理 <span>(${processed}/${total})</span><em class="board-title-mark" aria-hidden="true">⚡</em>`;
+      boardSubtitle.textContent = "";
+      boardSubtitle.hidden = true;
+      return;
+    }
+
+    if (mode === "completed") {
+      boardTitle.classList.add("is-completed");
+      boardTitle.innerHTML = `已完成 <span>(${processed}/${total})</span>`;
+      boardSubtitle.textContent = "";
+      boardSubtitle.hidden = true;
+      return;
+    }
+
+    if (mode === "failed") {
+      boardTitle.classList.add("is-failed");
+      boardTitle.textContent = "处理失败";
+      boardSubtitle.textContent = "请重新上传后再试";
+      boardSubtitle.hidden = false;
+      return;
+    }
+
+    boardTitle.classList.add("is-idle");
+    boardTitle.textContent = "压缩任务";
+    boardSubtitle.textContent = "等待上传图片";
+    boardSubtitle.hidden = false;
+  }
+
   function getStatusMeta(item) {
     if (item.status === "success") {
       return {
         icon: "/assets/icon_check_circle.png",
-        title: "压缩完成",
+        title: "已完成",
         detail: `${formatBytes(item.compressed_size)}（↓ ${formatter.format(item.ratio || 0)}%）`,
       };
     }
@@ -123,13 +156,13 @@
     if (item.status === "processing") {
       return {
         icon: "/assets/icon_loader.png",
-        title: "压缩中...",
+        title: "正在处理",
         detail: "正在处理中，请稍候。",
       };
     }
     return {
       icon: "/assets/icon_doc.png",
-      title: "排队中",
+      title: "正在处理",
       detail: "等待进入压缩队列",
     };
   }
@@ -140,7 +173,7 @@
 
     if (!items.length) {
       taskItems.innerHTML =
-        '<article class="task-row"><div class="file-cell"><strong>等待上传图片</strong></div><span>-</span><span class="status-cell"><b>暂无任务</b><small>选择图片后开始压缩</small></span><span class="dash">-</span></article>';
+        '<article class="task-row is-empty"><div class="file-cell"><strong>等待上传图片</strong></div><span>-</span><span class="status-cell"><b>暂无任务</b><small>选择图片后开始压缩</small></span><span class="dash">-</span></article>';
       return;
     }
 
@@ -240,8 +273,7 @@
     const pendingCount = getPendingCount();
 
     if (!currentTaskSnapshot) {
-      boardTitle.textContent = "压缩任务";
-      boardSubtitle.textContent = "等待上传图片";
+      setBoardHeading("idle");
       setUploadProgress(0, "等待选择图片");
       setCompressProgress(0, "上传完成后开始处理");
       doneStatusText.textContent = "查看压缩结果";
@@ -252,8 +284,7 @@
     }
 
     if (currentTaskSnapshot.status === "uploading") {
-      boardTitle.textContent = "上传文件";
-      boardSubtitle.textContent = "正在上传文件";
+      setBoardHeading("processing", Math.max(0, total - pendingCount), total);
       uploadStatusText.textContent =
         pendingCount < total ? `已上传 ${total - pendingCount} 个文件，本次上传 ${pendingCount} 个文件` : currentUploadMessage;
       uploadProgressFill.style.width = `${currentUploadPercent}%`;
@@ -270,12 +301,7 @@
     }
 
     if (activeTaskIds.size) {
-      boardTitle.textContent = "正在处理";
-      boardSubtitle.textContent = currentTaskSnapshot.current_filename
-        ? `当前处理：${currentTaskSnapshot.current_filename}`
-        : activeTaskIds.size > 1
-          ? `正在处理 ${activeTaskIds.size} 个任务`
-          : "正在进入处理队列";
+      setBoardHeading("processing", processed, total);
       setCompressProgress(compressPercent, `已完成 ${processed} / ${total}`);
       doneStatusText.textContent = "完成后可查看结果";
       resultButton.setAttribute("aria-disabled", "true");
@@ -284,9 +310,7 @@
     }
 
     if (total > 0 && processed >= total) {
-      boardTitle.textContent = "压缩完成";
-      boardSubtitle.textContent =
-        sessionSummary.failed > 0 ? "部分成功，部分失败" : "所有图片处理完成";
+      setBoardHeading("completed", processed, total);
       setCompressProgress(100, `已完成 ${processed} / ${total}`);
       doneStatusText.textContent = "点击下载按钮获取图片";
       resultButton.setAttribute("aria-disabled", "false");
@@ -294,7 +318,7 @@
       return;
     }
 
-    boardTitle.textContent = "处理失败";
+    setBoardHeading("failed");
     boardSubtitle.textContent = currentTaskSnapshot.error_message || "任务未能完成";
     setCompressProgress(compressPercent || 100, currentTaskSnapshot.error_message || "请重新上传后再试");
     doneStatusText.textContent = currentTaskSnapshot.error_message || "请重新上传后再试";

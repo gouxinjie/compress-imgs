@@ -16,7 +16,7 @@
       </div>
       <div class="upload-main">
         <div class="upload-copy">
-          <h2>拖拽图片到这里，或点击 <span>选择文件</span></h2>
+          <h2>拖拽图片到这里，或<span>点击选择文件</span></h2>
           <p>支持 PNG、JPG、JPEG、WEBP 格式</p>
         </div>
         <label class="primary-action">
@@ -66,7 +66,7 @@
     <aside class="task-sidebar">
       <div class="step-list">
         <article class="step-card active" data-step="uploading">
-          <span class="step-badge"><span class="step-glyph" aria-hidden="true">↑</span></span>
+          <span class="step-badge"><span class="step-glyph" aria-hidden="true"><img src="/assets/step_upload.png" alt="" width="18" height="18"></span></span>
           <div>
             <strong>上传文件</strong>
             <small id="upload-status-text">等待选择图片</small>
@@ -77,7 +77,7 @@
           </div>
         </article>
         <article class="step-card" data-step="compressing">
-          <span class="step-badge"><span class="step-glyph" aria-hidden="true">⚡</span></span>
+          <span class="step-badge"><span class="step-glyph" aria-hidden="true"><img src="/assets/step_compressing.png" alt="" width="18" height="18"></span></span>
           <div>
             <strong>压缩中</strong>
             <small id="compress-status-text">上传完成后开始处理</small>
@@ -88,7 +88,7 @@
           </div>
         </article>
         <article class="step-card" data-step="completed">
-          <span class="step-badge"><span class="step-glyph" aria-hidden="true">✓</span></span>
+          <span class="step-badge"><span class="step-glyph" aria-hidden="true"><img src="/assets/step_completed.png" alt="" width="18" height="18"></span></span>
           <div>
             <strong>完成</strong>
             <small id="done-status-text">查看压缩结果</small>
@@ -101,42 +101,44 @@
     </aside>
 
       <div class="task-main">
-        <div class="task-main-header">
-          <div>
-            <h3 id="board-title">压缩任务</h3>
-            <p id="board-subtitle">等待上传图片</p>
-          </div>
-          <button class="ghost-danger" id="reset-button" type="button">
-            清空列表
-          </button>
-        </div>
-
-      <div class="task-table">
-        <div class="task-table-head">
-          <span>文件名</span>
-          <span>大小</span>
-          <span>状态</span>
-          <span>操作</span>
-        </div>
-        <div class="task-table-body" id="task-items">
-          <article class="task-row">
-            <div class="file-cell">
-              <strong>等待上传图片</strong>
+        <div class="task-panel">
+          <div class="task-main-header">
+            <div class="task-main-title">
+              <h3 id="board-title">压缩任务</h3>
+              <p id="board-subtitle">等待上传图片</p>
             </div>
-            <span>-</span>
-            <span class="status-cell">
-              <b>暂无任务</b>
-              <small>选择图片后开始压缩</small>
-            </span>
-            <span class="dash">-</span>
-          </article>
+            <button class="ghost-danger" id="reset-button" type="button">
+              <img src="/assets/icon_trash.png" alt="" width="14" height="14">
+              清空列表
+            </button>
+          </div>
+
+        <div class="task-table">
+          <div class="task-table-head">
+            <span>文件名</span>
+            <span>大小</span>
+            <span>状态</span>
+            <span>操作</span>
+          </div>
+          <div class="task-table-body" id="task-items">
+            <article class="task-row is-empty">
+              <div class="file-cell">
+                <strong>等待上传图片</strong>
+              </div>
+              <span>-</span>
+              <span class="status-cell">
+                <b>暂无任务</b>
+                <small>选择图片后开始压缩</small>
+              </span>
+              <span class="dash">-</span>
+            </article>
+          </div>
         </div>
-      </div>
+        </div>
 
       <div class="summary-card">
         <div class="summary-meta">
           <div class="summary-status-badge">
-            <span class="summary-glyph" aria-hidden="true"></span>
             <span>已完成 <strong id="summary-processed">0 / 0</strong></span>
           </div>
           <div>

@@ -8,9 +8,25 @@ from fastapi.responses import FileResponse, JSONResponse
 from app.models.schemas import CreateTaskResponseSchema, TaskResponseSchema
 from app.services.cleanup import cleanup_expired_files
 from app.services.compressor import CompressionError
+from app.services.file_store import UploadLimitError
 
 
 router = APIRouter(prefix="/api", tags=["api"])
+
+
+async def _cleanup_partial_uploads(files: list[UploadFile], saved_paths: list[Path], upload_dir: Path, compressed_dir: Path) -> None:
+    for upload in files:
+        await upload.close()
+    for saved_path in saved_paths:
+        saved_path.unlink(missing_ok=True)
+    try:
+        upload_dir.rmdir()
+    except OSError:
+        pass
+    try:
+        compressed_dir.rmdir()
+    except OSError:
+        pass
 
 
 @router.post("/compress", response_model=CreateTaskResponseSchema)
@@ -66,20 +82,8 @@ async def create_compress_task(
                     },
                 )
 
-            saved = await file_store.save_upload(upload, upload_dir, existing_names)
-            saved_paths.append(saved["path"])
-            file_size = int(saved["size"])
-            total_size += file_size
-
-            if file_size > settings.max_file_size_bytes:
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "code": "file_too_large",
-                        "message": f"单张图片不能超过 {settings.max_file_size_mb} MB。",
-                    },
-                )
-            if total_size > settings.max_request_size_bytes:
+            request_remaining_bytes = settings.max_request_size_bytes - total_size
+            if request_remaining_bytes <= 0:
                 raise HTTPException(
                     status_code=400,
                     detail={
@@ -87,6 +91,17 @@ async def create_compress_task(
                         "message": f"本次上传总大小不能超过 {settings.max_request_size_mb} MB。",
                     },
                 )
+
+            saved = await file_store.save_upload(
+                upload,
+                upload_dir,
+                existing_names,
+                max_file_size_bytes=settings.max_file_size_bytes,
+                max_request_remaining_bytes=request_remaining_bytes,
+            )
+            saved_paths.append(saved["path"])
+            file_size = int(saved["size"])
+            total_size += file_size
 
             items.append(
                 {
@@ -102,19 +117,11 @@ async def create_compress_task(
                     "error_message": None,
                 }
             )
+    except UploadLimitError as exc:
+        await _cleanup_partial_uploads(files, saved_paths, upload_dir, compressed_dir)
+        raise HTTPException(status_code=400, detail={"code": exc.code, "message": exc.message}) from exc
     except Exception:
-        for upload in files:
-            await upload.close()
-        for saved_path in saved_paths:
-            saved_path.unlink(missing_ok=True)
-        try:
-            upload_dir.rmdir()
-        except OSError:
-            pass
-        try:
-            compressed_dir.rmdir()
-        except OSError:
-            pass
+        await _cleanup_partial_uploads(files, saved_paths, upload_dir, compressed_dir)
         raise
 
     task_store.create_task(task_id, items)

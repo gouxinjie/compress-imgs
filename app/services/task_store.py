@@ -109,13 +109,17 @@ class TaskStore:
         success = 0
         failed = 0
         compressed_bytes = 0
+        saved_bytes = 0
 
         for item in task["items"]:
             if item["status"] in {"success", "failed"}:
                 processed += 1
             if item["status"] == "success":
                 success += 1
-                compressed_bytes += item["compressed_size"] or 0
+                original_size = item["original_size"] or 0
+                compressed_size = item["compressed_size"] or 0
+                compressed_bytes += compressed_size
+                saved_bytes += max(original_size - compressed_size, 0)
             if item["status"] == "failed":
                 failed += 1
 
@@ -127,7 +131,7 @@ class TaskStore:
                 "failed": failed,
                 "original_bytes": original_bytes,
                 "compressed_bytes": compressed_bytes,
-                "saved_bytes": max(original_bytes - compressed_bytes, 0),
+                "saved_bytes": saved_bytes,
             }
         )
 

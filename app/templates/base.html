@@ -9,29 +9,41 @@
   </head>
   <body>
     <div class="page-shell">
-      <div class="page-noise"></div>
       <header class="site-header">
         <a class="brand" href="/">
           <span class="brand-mark"></span>
           <span class="brand-text">Compress<span>Imgs</span></span>
         </a>
         <nav class="site-nav">
-          <a href="#features" class="nav-link">
-            <img src="/assets/icon_shield.png" alt="" width="16" height="16">
+          <button
+            type="button"
+            class="nav-link"
+            data-toast-key="privacy"
+          >
+            <img src="/assets/icon_nav_shield.png" alt="" width="16" height="16">
             <span>安全隐私</span>
-          </a>
-          <a href="#help" class="nav-link">
-            <img src="/assets/icon_help.png" alt="" width="16" height="16">
+          </button>
+          <button
+            type="button"
+            class="nav-link"
+            data-toast-key="help"
+          >
+            <img src="/assets/icon_nav_help.png" alt="" width="16" height="16">
             <span>使用帮助</span>
-          </a>
+          </button>
           <a href="https://github.com/gouxinjie/compress-imgs" target="_blank" rel="noopener noreferrer" class="launch-button">
-            <img src="/assets/icon_flash.png" alt="" width="14" height="14">
+            <img src="/assets/icon_launch_lightning.png" alt="" width="14" height="14">
             <span>开源项目</span>
           </a>
         </nav>
       </header>
+      <div class="nav-toast" id="nav-toast" role="status" aria-live="polite" hidden>
+        <strong class="nav-toast-title" id="nav-toast-title"></strong>
+        <p class="nav-toast-message" id="nav-toast-message"></p>
+      </div>
       {% block content %}{% endblock %}
     </div>
+    <script src="{{ url_for('static', path='js/common.js') }}" defer></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>
