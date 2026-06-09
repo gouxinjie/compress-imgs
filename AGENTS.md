@@ -83,12 +83,18 @@
 
 使用本地临时目录，不接数据库。
 
-- `work/tmp/uploads/`：原图
-- `work/tmp/compressed/{task_id}/`：压缩结果
-- `work/tmp/zips/`：ZIP 文件
-- `work/tmp/tasks/`：任务 JSON
+- `work/tmp/runtime/uploads/`：原图
+- `work/tmp/runtime/compressed/{task_id}/`：压缩结果
+- `work/tmp/runtime/zips/`：ZIP 文件
+- `work/tmp/runtime/tasks/`：任务 JSON
 
 临时文件应支持过期清理，目标清理时间为 `30-60` 分钟。
+
+## 静态资源约定
+
+- 网站图标、头部图标、功能图标、场景图等统一放在 `assets/`
+- 页面中通过 `/assets/...` 引用资源
+- 未被代码引用的图片不应长期保留在仓库中
 
 ## 推荐目录
 
@@ -113,18 +119,21 @@ app/
   static/
     css/
       app.css
-    scss/
-      app.scss
     js/
+      common.js
       upload.js
+      result.js
   models/
     schemas.py
+assets/
 work/
   tmp/
-    uploads/
-    compressed/
-    zips/
-    tasks/
+    runtime/
+      uploads/
+      compressed/
+      zips/
+      tasks/
+tests/
 ```
 
 ## 开发优先级

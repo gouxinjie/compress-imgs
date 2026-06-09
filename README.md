@@ -91,7 +91,7 @@ app/
     css/
     js/
   models/
-split-assets-fixed/
+assets/
 work/
   tmp/
     runtime/

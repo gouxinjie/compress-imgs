@@ -53,7 +53,7 @@ class Settings:
 
     @property
     def assets_dir(self) -> Path:
-        return BASE_DIR / "split-assets-fixed"
+        return BASE_DIR / "assets"
 
     @property
     def runtime_dir(self) -> Path:

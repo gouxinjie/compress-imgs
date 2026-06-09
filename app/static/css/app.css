@@ -102,18 +102,13 @@ img {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.58rem;
+  font-size: 1.5rem;
   font-style: italic;
   font-weight: 800;
 }
 .brand-mark {
-  width: 26px;
-  height: 26px;
-  border-radius: 9px;
-  background: radial-gradient(circle at 32% 35%, #ffffff 0 10%, transparent 11%), radial-gradient(circle at 72% 30%, rgba(138, 77, 255, 0.95) 0 22%, transparent 23%), linear-gradient(135deg, #7a4bff, #f07dff 60%, #6bfff3);
-  box-shadow: 0 0 14px rgba(138, 77, 255, 0.45);
-  transform: rotate(-18deg);
+  width:60px;
+  object-fit: contain;
 }
 .brand-text span {
   color: var(--purple-light);
