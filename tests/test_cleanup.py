@@ -33,7 +33,7 @@ class CleanupExpiredFilesTests(unittest.TestCase):
             max_file_size_mb=10,
             max_request_size_mb=100,
             temp_dir=self.base_dir / "work" / "tmp",
-            file_expire_minutes=60,
+            file_expire_minutes=30,
             poll_interval_ms=1000,
             rate_limit_per_minute=5,
             allowed_extensions=("png", "jpg", "jpeg", "webp"),
@@ -90,6 +90,48 @@ class CleanupExpiredFilesTests(unittest.TestCase):
         self.assertTrue(zip_path.exists())
         self.assertFalse(uploads_dir.exists())
         self.assertFalse(compressed_dir.exists())
+
+    def test_cleanup_uses_configured_expiration_boundary(self) -> None:
+        recent_task_id = "task_recent"
+        expired_task_id = "task_expired"
+
+        recent_task_file = self.settings.tasks_dir / f"{recent_task_id}.json"
+        expired_task_file = self.settings.tasks_dir / f"{expired_task_id}.json"
+
+        recent_uploads_dir = self.settings.uploads_dir / recent_task_id
+        recent_compressed_dir = self.settings.compressed_dir / recent_task_id
+        recent_zip_path = self.settings.zips_dir / f"{recent_task_id}.zip"
+
+        expired_uploads_dir = self.settings.uploads_dir / expired_task_id
+        expired_compressed_dir = self.settings.compressed_dir / expired_task_id
+        expired_zip_path = self.settings.zips_dir / f"{expired_task_id}.zip"
+
+        recent_uploads_dir.mkdir(parents=True, exist_ok=True)
+        recent_compressed_dir.mkdir(parents=True, exist_ok=True)
+        expired_uploads_dir.mkdir(parents=True, exist_ok=True)
+        expired_compressed_dir.mkdir(parents=True, exist_ok=True)
+
+        _touch(recent_uploads_dir / "image.png", minutes_ago=120)
+        _touch(recent_compressed_dir / "image.png", minutes_ago=120)
+        _touch(recent_zip_path, minutes_ago=120)
+        _touch(recent_task_file, minutes_ago=self.settings.file_expire_minutes - 1)
+
+        _touch(expired_uploads_dir / "image.png", minutes_ago=120)
+        _touch(expired_compressed_dir / "image.png", minutes_ago=120)
+        _touch(expired_zip_path, minutes_ago=120)
+        _touch(expired_task_file, minutes_ago=self.settings.file_expire_minutes + 1)
+
+        cleanup.cleanup_expired_files(self.settings)
+
+        self.assertTrue(recent_task_file.exists())
+        self.assertTrue(recent_uploads_dir.exists())
+        self.assertTrue(recent_compressed_dir.exists())
+        self.assertTrue(recent_zip_path.exists())
+
+        self.assertFalse(expired_task_file.exists())
+        self.assertFalse(expired_uploads_dir.exists())
+        self.assertFalse(expired_compressed_dir.exists())
+        self.assertFalse(expired_zip_path.exists())
 
 
 if __name__ == "__main__":

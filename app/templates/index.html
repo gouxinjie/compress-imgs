@@ -56,7 +56,7 @@
         <img src="/assets/feature_security.png" alt="" width="50" height="50">
         <div>
           <strong>安全可靠</strong>
-          <span>文件 1 小时后自动清理</span>
+          <span>文件 {{ settings.file_expire_minutes }} 分钟后自动清理</span>
         </div>
       </article>
     </section>
@@ -166,7 +166,7 @@
 
   <p class="privacy-note" id="help">
     <img src="/assets/icon_shield.png" alt="" width="16" height="16">
-    <span>所有文件仅临时存储，{{ settings.file_expire_minutes // 60 if settings.file_expire_minutes >= 60 else 1 }} 小时后自动删除，保障您的隐私安全。</span>
+    <span>所有文件仅临时存储，{{ settings.file_expire_minutes }} 分钟后自动删除，保障您的隐私安全。</span>
   </p>
 </main>
 {% endblock %}

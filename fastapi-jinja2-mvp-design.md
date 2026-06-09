@@ -521,7 +521,7 @@ client_max_body_size 100M;
 - `MAX_FILE_SIZE_MB=10`
 - `MAX_REQUEST_SIZE_MB=100`
 - `TEMP_DIR=work/tmp`
-- `FILE_EXPIRE_MINUTES=60`
+- `FILE_EXPIRE_MINUTES=30`
 - `POLL_INTERVAL_MS=1000`
 
 ### `services/compressor.py`

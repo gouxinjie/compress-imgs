@@ -88,7 +88,7 @@
 - `work/tmp/runtime/zips/`：ZIP 文件
 - `work/tmp/runtime/tasks/`：任务 JSON
 
-临时文件应支持过期清理，目标清理时间为 `30-60` 分钟。
+临时文件应支持过期清理，目标清理时间为 `30` 分钟。
 
 ## 静态资源约定
 
