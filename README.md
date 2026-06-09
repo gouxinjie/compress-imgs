@@ -48,6 +48,16 @@ POLL_INTERVAL_MS=1000
 RATE_LIMIT_PER_MINUTE=5
 ```
 
+运行时文件会集中存放在 `TEMP_DIR/runtime/` 下，例如：
+
+```text
+work/tmp/runtime/
+  uploads/
+  compressed/
+  zips/
+  tasks/
+```
+
 ### 3. 启动项目
 
 Windows 下可直接执行：
@@ -83,6 +93,12 @@ app/
   models/
 split-assets-fixed/
 work/
+  tmp/
+    runtime/
+      uploads/
+      compressed/
+      zips/
+      tasks/
 requirements.txt
 start.bat
 ```

@@ -16,7 +16,7 @@
       </div>
       <div class="upload-main">
         <div class="upload-copy">
-          <h2>拖拽图片到这里，或<span>点击选择文件</span></h2>
+          <h2>拖拽图片到这里，或 <span>点击选择文件</span></h2>
           <p>支持 PNG、JPG、JPEG、WEBP 格式</p>
         </div>
         <label class="primary-action">
@@ -100,23 +100,24 @@
       </div>
     </aside>
 
-      <div class="task-main">
-        <div class="task-panel">
-          <div class="task-main-header">
-            <div class="task-main-title">
-              <h3 id="board-title">压缩任务</h3>
-              <p id="board-subtitle">等待上传图片</p>
-            </div>
-            <button class="ghost-danger" id="reset-button" type="button">
-              <img src="/assets/icon_trash.png" alt="" width="14" height="14">
-              清空列表
-            </button>
+    <div class="task-main">
+      <div class="task-panel">
+        <div class="task-main-header">
+          <div class="task-main-title">
+            <h3 id="board-title">压缩任务</h3>
+            <p id="board-subtitle">等待上传图片</p>
           </div>
+          <button class="ghost-danger" id="reset-button" type="button">
+            <img src="/assets/icon_trash.png" alt="" width="14" height="14">
+            清空列表
+          </button>
+        </div>
 
         <div class="task-table">
           <div class="task-table-head">
             <span>文件名</span>
             <span>大小</span>
+            <span>图片类型</span>
             <span>状态</span>
             <span>操作</span>
           </div>
@@ -126,6 +127,7 @@
                 <strong>等待上传图片</strong>
               </div>
               <span>-</span>
+              <span class="image-type-cell">-</span>
               <span class="status-cell">
                 <b>暂无任务</b>
                 <small>选择图片后开始压缩</small>
@@ -134,7 +136,7 @@
             </article>
           </div>
         </div>
-        </div>
+      </div>
 
       <div class="summary-card">
         <div class="summary-meta">

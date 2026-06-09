@@ -43,6 +43,7 @@
   let currentCompressPercent = 0;
   let currentCompressMessage = "上传完成后开始处理";
   let pollTimer = null;
+  let isPolling = false;
 
   function formatBytes(value) {
     if (value == null) {
@@ -55,6 +56,12 @@
       return `${formatter.format(value / 1024)} KB`;
     }
     return `${formatter.format(value / 1024 / 1024)} MB`;
+  }
+
+  function getImageTypeLabel(item) {
+    const sourceName = item.filename || item.stored_filename || "";
+    const ext = sourceName.includes(".") ? sourceName.split(".").pop().trim().toUpperCase() : "";
+    return ext || "-";
   }
 
   function setError(message) {
@@ -106,13 +113,21 @@
   }
 
   function setBoardHeading(mode, processed = 0, total = 0) {
-    boardTitle.classList.remove("is-processing", "is-completed", "is-idle", "is-failed");
+    boardTitle.classList.remove("is-queued", "is-processing", "is-completed", "is-idle", "is-failed");
+
+    if (mode === "queued") {
+      boardTitle.classList.add("is-queued");
+      boardTitle.innerHTML = '<span class="board-title-spinner" aria-hidden="true"></span><span class="board-title-label">正在处理</span>';
+      boardSubtitle.textContent = "等待进入压缩队列";
+      boardSubtitle.hidden = false;
+      return;
+    }
 
     if (mode === "processing") {
       boardTitle.classList.add("is-processing");
-      boardTitle.innerHTML = `正在处理 <span>(${processed}/${total})</span><em class="board-title-mark" aria-hidden="true">⚡</em>`;
-      boardSubtitle.textContent = "";
-      boardSubtitle.hidden = true;
+      boardTitle.innerHTML = `<span class="board-title-spinner" aria-hidden="true"></span><span class="board-title-label">正在处理</span><span>(${processed}/${total})</span>`;
+      boardSubtitle.textContent = "正在优化中，请稍候";
+      boardSubtitle.hidden = false;
       return;
     }
 
@@ -141,13 +156,15 @@
   function getStatusMeta(item) {
     if (item.status === "success") {
       return {
-        icon: "/assets/icon_check_circle.png",
-        title: "已完成",
+        iconType: "image",
+        icon: "/assets/icon_status_completed.png",
+        title: "压缩完成",
         detail: `${formatBytes(item.compressed_size)}（↓ ${formatter.format(item.ratio || 0)}%）`,
       };
     }
     if (item.status === "failed") {
       return {
+        iconType: "image",
         icon: "/assets/icon_close.png",
         title: "压缩失败",
         detail: item.error_message || "请稍后重试。",
@@ -155,15 +172,15 @@
     }
     if (item.status === "processing") {
       return {
-        icon: "/assets/icon_loader.png",
-        title: "正在处理",
-        detail: "正在处理中，请稍候。",
+        iconType: "spinner",
+        title: "压缩中...",
+        detail: "正在优化中，请稍候",
       };
     }
     return {
-      icon: "/assets/icon_doc.png",
-      title: "正在处理",
-      detail: "等待进入压缩队列",
+      iconType: "spinner",
+      title: "压缩中...",
+      detail: "正在优化中，请稍候",
     };
   }
 
@@ -173,7 +190,7 @@
 
     if (!items.length) {
       taskItems.innerHTML =
-        '<article class="task-row is-empty"><div class="file-cell"><strong>等待上传图片</strong></div><span>-</span><span class="status-cell"><b>暂无任务</b><small>选择图片后开始压缩</small></span><span class="dash">-</span></article>';
+        '<article class="task-row is-empty"><div class="file-cell"><strong>等待上传图片</strong></div><span>-</span><span class="image-type-cell">-</span><span class="status-cell"><b>暂无任务</b><small>选择图片后开始压缩</small></span><span class="dash">-</span></article>';
       return;
     }
 
@@ -182,10 +199,16 @@
       row.className = "task-row";
 
       const statusMeta = getStatusMeta(item);
+      const statusClass = item.status === "queued" ? "processing" : item.status;
       const preview = previewMap.get(item.rowKey) || item.preview_path || "/assets/icon_image.png";
       const downloaded = downloadedRowKeys.has(item.rowKey);
+      const imageType = getImageTypeLabel(item);
+      const statusIconMarkup =
+        statusMeta.iconType === "spinner"
+          ? '<span class="status-spinner" aria-hidden="true"></span>'
+          : `<img class="blend-icon" src="${statusMeta.icon}" alt="" width="18" height="18">`;
       const actionMarkup = item.download_path
-        ? `<a class="icon-action${downloaded ? " downloaded" : ""}" href="${item.download_path}" download data-downloadable="true" data-row-key="${item.rowKey}" title="${downloaded ? "已下载" : "下载图片"}"><img class="blend-icon" src="${downloaded ? "/assets/icon_check_circle.png" : "/assets/icon_download.png"}" alt="" width="18" height="18"></a>`
+        ? `<a class="icon-action${downloaded ? " downloaded" : ""}" href="${item.download_path}" download data-downloadable="true" data-row-key="${item.rowKey}" title="${downloaded ? "已下载" : "下载图片"}"><img class="blend-icon" src="${downloaded ? "/assets/icon_status_completed.png" : "/assets/icon_download_action.png"}" alt="" width="16" height="16"></a>`
         : '<span class="dash">-</span>';
 
       row.innerHTML = `
@@ -194,12 +217,13 @@
           <div><strong>${item.filename}</strong></div>
         </div>
         <span>${formatBytes(item.original_size)}</span>
-        <span class="status-cell ${item.status}">
-          <span class="status-line">
-            <span class="status-icon"><img class="blend-icon" src="${statusMeta.icon}" alt="" width="18" height="18"></span>
+        <span class="image-type-cell">${imageType}</span>
+        <span class="status-cell ${statusClass}">
+          <span class="status-icon">${statusIconMarkup}</span>
+          <span class="status-copy">
             <b>${statusMeta.title}</b>
+            <small>${statusMeta.detail}</small>
           </span>
-          <small>${statusMeta.detail}</small>
         </span>
         <span class="action-cell">${actionMarkup}</span>
       `;
@@ -301,7 +325,8 @@
     }
 
     if (activeTaskIds.size) {
-      setBoardHeading("processing", processed, total);
+      const hasStartedProcessing = getOrderedRows().some((item) => item.status === "processing" || item.status === "success" || item.status === "failed");
+      setBoardHeading(hasStartedProcessing ? "processing" : "queued", processed, total);
       setCompressProgress(compressPercent, `已完成 ${processed} / ${total}`);
       doneStatusText.textContent = "完成后可查看结果";
       resultButton.setAttribute("aria-disabled", "true");
@@ -359,6 +384,56 @@
     fileInput.value = "";
     setError("");
     renderAll();
+  }
+
+  function clearResumeTaskParam() {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("resume_task")) {
+      return;
+    }
+
+    url.searchParams.delete("resume_task");
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState({}, "", nextUrl || "/");
+  }
+
+  function restoreTaskFromUrl() {
+    const url = new URL(window.location.href);
+    const taskId = url.searchParams.get("resume_task");
+    if (!taskId) {
+      return;
+    }
+
+    currentTaskId = taskId;
+    setError("");
+
+    fetch(`/api/tasks/${taskId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("涓婁竴娆′换鍔¤褰曚笉瀛樺湪鎴栧凡杩囨湡銆?");
+        }
+        return response.json();
+      })
+      .then((task) => {
+        if (!["completed", "partial_success", "failed"].includes(task.status)) {
+          activeTaskIds.add(taskId);
+        }
+
+        syncTask(taskId, task);
+        renderAll();
+        clearResumeTaskParam();
+
+        if (activeTaskIds.size) {
+          schedulePoll(true);
+        }
+      })
+      .catch((error) => {
+        currentTaskId = null;
+        currentTaskSnapshot = null;
+        setError(error.message || "鎭㈠浠诲姟璁板綍澶辫触锛岃閲嶆柊涓婁紶銆?");
+        clearResumeTaskParam();
+        renderAll();
+      });
   }
 
   function validateFiles(files) {
@@ -474,8 +549,19 @@
     }
   }
 
-  function schedulePoll() {
-    if (pollTimer || !activeTaskIds.size) {
+  function schedulePoll(immediate = false) {
+    if (!activeTaskIds.size || isPolling) {
+      return;
+    }
+    if (immediate) {
+      if (pollTimer) {
+        clearTimeout(pollTimer);
+        pollTimer = null;
+      }
+      pollTasks();
+      return;
+    }
+    if (pollTimer) {
       return;
     }
     pollTimer = window.setTimeout(pollTasks, config.pollIntervalMs);
@@ -487,6 +573,8 @@
     if (!taskIds.length) {
       return;
     }
+
+    isPolling = true;
 
     Promise.all(
       taskIds.map((taskId) =>
@@ -507,6 +595,7 @@
         setError(error.message || "任务状态获取失败。");
       })
       .finally(() => {
+        isPolling = false;
         if (activeTaskIds.size) {
           schedulePoll();
         }
@@ -571,7 +660,7 @@
         boardSubtitle.textContent = "正在进入压缩队列";
         setCompressProgress(0, "等待压缩开始");
         renderAll();
-        schedulePoll();
+        schedulePoll(true);
       } else {
         const detail = JSON.parse(xhr.responseText || "{}").detail;
         markPendingBatchFailed(batchId, detail?.message || "上传失败，请稍后重试。");
@@ -622,4 +711,5 @@
   resetButton.addEventListener("click", resetBoard);
 
   resetBoard();
+  restoreTaskFromUrl();
 })();

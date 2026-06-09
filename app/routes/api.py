@@ -148,7 +148,7 @@ async def error_dictionary(code: str):
     return JSONResponse({"code": code})
 
 
-async def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> None:
+def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> None:
     task_store = app.state.task_store
     file_store = app.state.file_store
     compressor = app.state.compressor

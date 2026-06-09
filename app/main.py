@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from app.config import get_settings
 from app.routes.api import download_router, router as api_router
 from app.routes.pages import router as page_router
-from app.services.cleanup import cleanup_expired_files, ensure_directories
+from app.services.cleanup import cleanup_expired_files, ensure_directories, migrate_legacy_runtime_layout
 from app.services.compressor import Compressor
 from app.services.file_store import FileStore
 from app.services.limiter import SimpleRateLimiter
@@ -27,6 +27,7 @@ def format_bytes(value: int | None) -> str:
 
 def build_app() -> FastAPI:
     settings = get_settings()
+    migrate_legacy_runtime_layout(settings)
     ensure_directories(settings)
     cleanup_expired_files(settings)
 

@@ -56,20 +56,24 @@ class Settings:
         return BASE_DIR / "split-assets-fixed"
 
     @property
+    def runtime_dir(self) -> Path:
+        return self.temp_dir / "runtime"
+
+    @property
     def uploads_dir(self) -> Path:
-        return self.temp_dir / "uploads"
+        return self.runtime_dir / "uploads"
 
     @property
     def compressed_dir(self) -> Path:
-        return self.temp_dir / "compressed"
+        return self.runtime_dir / "compressed"
 
     @property
     def zips_dir(self) -> Path:
-        return self.temp_dir / "zips"
+        return self.runtime_dir / "zips"
 
     @property
     def tasks_dir(self) -> Path:
-        return self.temp_dir / "tasks"
+        return self.runtime_dir / "tasks"
 
 
 @lru_cache(maxsize=1)

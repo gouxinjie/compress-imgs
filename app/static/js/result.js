@@ -24,31 +24,79 @@
     }
   }
 
+  function isIconAction(action) {
+    return action.classList.contains("result-download-icon");
+  }
+
+  function setActionLabel(action, label) {
+    action.setAttribute("aria-label", label);
+    action.title = label;
+  }
+
+  function setActionText(action, label) {
+    action.textContent = label;
+    setActionLabel(action, label);
+  }
+
+  function setActionIcon(action, label, iconPath) {
+    action.innerHTML = `<img class="result-download-icon-image" src="${iconPath}" alt="" width="18" height="18"><span class="sr-only">${label}</span>`;
+    setActionLabel(action, label);
+  }
+
+  function setActionSpinner(action, label) {
+    action.innerHTML = '<span class="result-download-spinner" aria-hidden="true"></span><span class="sr-only"></span>';
+    const hiddenLabel = action.querySelector(".sr-only");
+    if (hiddenLabel) {
+      hiddenLabel.textContent = label;
+    }
+    setActionLabel(action, label);
+  }
+
+  function renderIdleState(action) {
+    const label = action.dataset.defaultText || "下载";
+    if (isIconAction(action)) {
+      setActionIcon(action, label, action.dataset.defaultIcon || "/assets/icon_download_action.png");
+      return;
+    }
+    setActionText(action, label);
+  }
+
   function applyDownloadedState(action) {
+    const label = action.dataset.downloadedText || "已下载";
     action.classList.add("downloaded");
     action.classList.remove("downloading");
     action.dataset.downloaded = "true";
     action.dataset.downloading = "false";
     action.setAttribute("aria-disabled", "true");
     action.setAttribute("tabindex", "-1");
-    action.textContent = action.dataset.downloadedText || "已下载";
-    action.title = action.dataset.downloadedText || "已下载";
+
+    if (isIconAction(action)) {
+      setActionIcon(action, label, action.dataset.downloadedIcon || "/assets/icon_check_circle.png");
+      return;
+    }
+
+    setActionText(action, label);
   }
 
   function applyDownloadingState(action) {
+    const label = action.dataset.loadingText || "下载中...";
     action.classList.add("downloading");
     action.dataset.downloading = "true";
     action.setAttribute("aria-disabled", "true");
-    action.textContent = action.dataset.loadingText || "下载中...";
-    action.title = action.dataset.loadingText || "下载中...";
+
+    if (isIconAction(action)) {
+      setActionSpinner(action, label);
+      return;
+    }
+
+    setActionText(action, label);
   }
 
   function restoreIdleState(action) {
     action.classList.remove("downloading");
     action.dataset.downloading = "false";
     action.removeAttribute("aria-disabled");
-    action.textContent = action.dataset.defaultText || "下载";
-    action.title = action.dataset.defaultText || "下载";
+    renderIdleState(action);
   }
 
   function getDownloadFilename(action, response) {
@@ -95,7 +143,8 @@
       return;
     }
 
-    action.dataset.defaultText = action.textContent.trim();
+    action.dataset.defaultText = action.dataset.defaultText || action.getAttribute("aria-label") || action.textContent.trim() || "下载";
+    renderIdleState(action);
 
     if (downloadedKeys.has(key)) {
       applyDownloadedState(action);
