@@ -1,0 +1,99 @@
+name: Deploy To ECS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-ecs-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      APP_DIR: /var/www/process-imgs
+      SERVICE_NAME: process-imgs
+      STAGING_DIR: /var/www/process-imgs/.deploy-work/${{ github.run_id }}-${{ github.sha }}
+      ECS_HOST: ${{ secrets.ECS_HOST }}
+      ECS_PORT: ${{ secrets.ECS_PORT }}
+      ECS_USER: ${{ secrets.ECS_USER }}
+      ECS_SSH_PRIVATE_KEY: ${{ secrets.ECS_SSH_PRIVATE_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install deployment tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y rsync openssh-client
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -n "${ECS_HOST}" || { echo "Missing secret: ECS_HOST"; exit 1; }
+          test -n "${ECS_USER}" || { echo "Missing secret: ECS_USER"; exit 1; }
+          test -n "${ECS_SSH_PRIVATE_KEY}" || { echo "Missing secret: ECS_SSH_PRIVATE_KEY"; exit 1; }
+
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          REMOTE_PORT="${ECS_PORT:-22}"
+
+          mkdir -p "${HOME}/.ssh"
+          chmod 700 "${HOME}/.ssh"
+          printf '%s\n' "${ECS_SSH_PRIVATE_KEY}" > "${HOME}/.ssh/id_ed25519"
+          chmod 600 "${HOME}/.ssh/id_ed25519"
+          ssh-keyscan -p "${REMOTE_PORT}" -H "${ECS_HOST}" >> "${HOME}/.ssh/known_hosts"
+
+      - name: Ensure remote app directory
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          REMOTE_PORT="${ECS_PORT:-22}"
+          ssh -p "${REMOTE_PORT}" "${ECS_USER}@${ECS_HOST}" "mkdir -p '${APP_DIR}' '${STAGING_DIR}'"
+
+      - name: Build deploy manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-files > .deploy-manifest
+
+      - name: Sync project files to staging
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          REMOTE_PORT="${ECS_PORT:-22}"
+          rsync -az \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.venv/' \
+            --exclude '.env' \
+            --exclude 'work/tmp/' \
+            --exclude '__pycache__/' \
+            --exclude '*.pyc' \
+            --exclude '.pytest_cache/' \
+            -e "ssh -p ${REMOTE_PORT}" \
+            ./ "${ECS_USER}@${ECS_HOST}:${STAGING_DIR}/"
+
+      - name: Install dependencies and restart service
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          REMOTE_PORT="${ECS_PORT:-22}"
+          ssh -p "${REMOTE_PORT}" "${ECS_USER}@${ECS_HOST}" \
+            "chmod +x '${STAGING_DIR}/deploy/deploy_on_ecs.sh' && APP_DIR='${APP_DIR}' SOURCE_DIR='${STAGING_DIR}' SERVICE_NAME='${SERVICE_NAME}' bash '${STAGING_DIR}/deploy/deploy_on_ecs.sh'"
