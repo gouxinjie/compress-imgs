@@ -1106,12 +1106,20 @@ img {
 }
 
 .result-button {
-  min-width: 138px;
-  min-height: 46px;
-  padding: 0 18px;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 25px;
   border-radius: 6px;
   font-size: 0.9rem;
 }
+
+.result-button-arrow {
+  width: 16px;
+  height: 16px;
+  display: block;
+  flex: 0 0 auto;
+}
+
 .result-button[aria-disabled=true] {
   pointer-events: none;
   opacity: 0.55;
