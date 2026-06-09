@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/var/www/process-imgs}"
+APP_DIR="${APP_DIR:-/var/www/compress-imgs}"
 SOURCE_DIR="${SOURCE_DIR:-$APP_DIR}"
 SERVICE_NAME="${SERVICE_NAME:-process-imgs}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"

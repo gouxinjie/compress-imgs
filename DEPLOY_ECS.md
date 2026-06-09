@@ -3,7 +3,7 @@
 本文档说明如何把当前项目通过 GitHub Actions 自动部署到 ECS 的：
 
 ```text
-/var/www/process-imgs
+/var/www/compress-imgs
 ```
 
 本文档按你的实际场景编写：
@@ -47,7 +47,7 @@
 2. GitHub Actions 触发部署工作流
 3. 工作流通过 SSH 连接 ECS
 4. 代码先同步到 ECS 上的临时发布目录
-5. 服务器把代码发布到 `/var/www/process-imgs`
+5. 服务器把代码发布到 `/var/www/compress-imgs`
 6. 仅删除“上一次由仓库管理、这次已不存在”的旧文件
 7. 安装或更新 Python 依赖
 8. 重启 `process-imgs` systemd 服务
@@ -101,7 +101,7 @@
 注意：
 
 - 当前方案不需要把 `TINIFY_API_KEY` 放到 GitHub Secrets
-- `TINIFY_API_KEY` 只保存在 ECS 本机 `/var/www/process-imgs/.env`
+- `TINIFY_API_KEY` 只保存在 ECS 本机 `/var/www/compress-imgs/.env`
 
 ## 4. ECS 首次初始化
 
@@ -128,22 +128,22 @@ sudo apt install -y python3 python3-venv python3-pip nginx git rsync
 
 ```bash
 sudo adduser --disabled-password --gecos "" deploy
-sudo mkdir -p /var/www/process-imgs
-sudo chown -R deploy:deploy /var/www/process-imgs
+sudo mkdir -p /var/www/compress-imgs
+sudo chown -R deploy:deploy /var/www/compress-imgs
 ```
 
 后续要保持一致：
 
 - GitHub Actions 用 `deploy` 这个账号 SSH 到 ECS
 - `process-imgs.service` 也用 `deploy` 运行
-- `/var/www/process-imgs` 目录也归 `deploy` 所有
+- `/var/www/compress-imgs` 目录也归 `deploy` 所有
 
 ### 4.3 创建运行环境文件
 
 切换到部署用户后，在 ECS 上手工创建：
 
 ```bash
-sudo -u deploy -H bash -lc 'cd /var/www/process-imgs && nano .env'
+sudo -u deploy -H bash -lc 'cd /var/www/compress-imgs && nano .env'
 ```
 
 内容示例：
@@ -161,7 +161,7 @@ RATE_LIMIT_PER_MINUTE=5
 
 说明：
 
-- `TINIFY_API_KEY` 就放在这台 ECS 的 `/var/www/process-imgs/.env`
+- `TINIFY_API_KEY` 就放在这台 ECS 的 `/var/www/compress-imgs/.env`
 - 这个 `.env` 保存在 ECS 本机，不会被 GitHub Actions 覆盖
 - 当前工作流会显式排除 `.env`
 - GitHub Actions 不需要也不应该持有生产 `TINIFY_API_KEY`
@@ -174,7 +174,7 @@ RATE_LIMIT_PER_MINUTE=5
 ### 4.4 准备运行目录
 
 ```bash
-sudo -u deploy -H bash -lc 'mkdir -p /var/www/process-imgs/work/tmp'
+sudo -u deploy -H bash -lc 'mkdir -p /var/www/compress-imgs/work/tmp'
 ```
 
 ## 5. 配置 systemd 服务
@@ -196,8 +196,8 @@ After=network.target
 Type=simple
 User=deploy
 Group=deploy
-WorkingDirectory=/var/www/process-imgs
-ExecStart=/var/www/process-imgs/.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+WorkingDirectory=/var/www/compress-imgs
+ExecStart=/var/www/compress-imgs/.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=3
 
@@ -208,7 +208,7 @@ WantedBy=multi-user.target
 注意：
 
 - 这里示例统一使用 `deploy` 用户运行服务
-- `WorkingDirectory` 和 `ExecStart` 都已经对齐到 `/var/www/process-imgs`
+- `WorkingDirectory` 和 `ExecStart` 都已经对齐到 `/var/www/compress-imgs`
 - 这样目录拥有者、systemd 用户、GitHub Actions SSH 用户保持一致
 
 加载并启动：
@@ -373,7 +373,7 @@ deploy
 注意：
 
 - 当前这套自动部署方案不需要配置 `TINIFY_API_KEY` 到 GitHub Secrets
-- `TINIFY_API_KEY` 只保存在 ECS 本机 `/var/www/process-imgs/.env`
+- `TINIFY_API_KEY` 只保存在 ECS 本机 `/var/www/compress-imgs/.env`
 
 ## 11. 给 GitHub Actions 准备 SSH Key
 
@@ -408,7 +408,7 @@ chmod 600 ~/.ssh/authorized_keys
 - 监听 `main` 分支 push
 - 支持手动触发 `workflow_dispatch`
 - 把代码先同步到 ECS 临时发布目录
-- 再发布到 `/var/www/process-imgs`
+- 再发布到 `/var/www/compress-imgs`
 - 不会覆盖 `.env`
 - 不会覆盖 `work/tmp`
 - 会按发布清单删除“仓库里已删掉、服务器上仍残留”的旧受管文件
@@ -422,7 +422,7 @@ chmod 600 ~/.ssh/authorized_keys
 
 ```bash
 sudo -u deploy -H bash -lc '
-  cd /var/www/process-imgs &&
+  cd /var/www/compress-imgs &&
   python3 -m venv .venv &&
   .venv/bin/pip install -r requirements.txt &&
   .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
@@ -580,10 +580,10 @@ sudo -n systemctl restart process-imgs
 上线前建议逐项确认：
 
 - ECS 已安装 Python / venv / Nginx / rsync
-- `/var/www/process-imgs/.env` 已创建
+- `/var/www/compress-imgs/.env` 已创建
 - `process-imgs.service` 已创建并可启动
 - `process-imgs.service` 运行用户是 `deploy`
-- `/var/www/process-imgs` 目录归 `deploy:deploy`
+- `/var/www/compress-imgs` 目录归 `deploy:deploy`
 - 部署用户可 SSH 登录 ECS
 - 部署用户可免密码执行：
   - `systemctl restart process-imgs`

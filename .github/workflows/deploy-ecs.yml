@@ -17,9 +17,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      APP_DIR: /var/www/process-imgs
+      APP_DIR: /var/www/compress-imgs
       SERVICE_NAME: process-imgs
-      STAGING_DIR: /var/www/process-imgs/.deploy-work/${{ github.run_id }}-${{ github.sha }}
+      STAGING_DIR: /var/www/compress-imgs/.deploy-work/${{ github.run_id }}-${{ github.sha }}
       ECS_HOST: ${{ secrets.ECS_HOST }}
       ECS_PORT: ${{ secrets.ECS_PORT }}
       ECS_USER: ${{ secrets.ECS_USER }}
