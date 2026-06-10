@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+from time import perf_counter
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Request, UploadFile
@@ -12,6 +14,8 @@ from app.services.file_store import UploadLimitError
 
 
 router = APIRouter(prefix="/api", tags=["api"])
+logger = logging.getLogger("uvicorn.error")
+LOG_PREFIX = "[compress-task]"
 
 
 async def _cleanup_partial_uploads(files: list[UploadFile], saved_paths: list[Path], upload_dir: Path, compressed_dir: Path) -> None:
@@ -35,6 +39,7 @@ async def create_compress_task(
     background_tasks: BackgroundTasks,
     files: list[UploadFile] = File(...),
 ):
+    request_started_at = perf_counter()
     settings = request.app.state.settings
     file_store = request.app.state.file_store
     task_store = request.app.state.task_store
@@ -72,6 +77,7 @@ async def create_compress_task(
 
     try:
         for upload in files:
+            upload_started_at = perf_counter()
             extension = Path(upload.filename or "").suffix.lower().lstrip(".")
             if extension not in settings.allowed_extensions:
                 raise HTTPException(
@@ -102,6 +108,7 @@ async def create_compress_task(
             saved_paths.append(saved["path"])
             file_size = int(saved["size"])
             total_size += file_size
+            upload_elapsed_ms = int((perf_counter() - upload_started_at) * 1000)
 
             items.append(
                 {
@@ -117,6 +124,15 @@ async def create_compress_task(
                     "error_message": None,
                 }
             )
+            logger.info(
+                "%s event=upload_saved task_id=%s file=%s bytes=%s elapsed_ms=%s client_ip=%s",
+                LOG_PREFIX,
+                task_id,
+                saved["stored_filename"],
+                file_size,
+                upload_elapsed_ms,
+                client_ip,
+            )
     except UploadLimitError as exc:
         await _cleanup_partial_uploads(files, saved_paths, upload_dir, compressed_dir)
         raise HTTPException(status_code=400, detail={"code": exc.code, "message": exc.message}) from exc
@@ -126,6 +142,15 @@ async def create_compress_task(
 
     task_store.create_task(task_id, items)
     background_tasks.add_task(process_task, request.app, task_id, upload_dir, compressed_dir)
+    logger.info(
+        "%s event=task_created task_id=%s files=%s total_bytes=%s upload_elapsed_ms=%s client_ip=%s",
+        LOG_PREFIX,
+        task_id,
+        len(items),
+        total_size,
+        int((perf_counter() - request_started_at) * 1000),
+        client_ip,
+    )
     return {"task_id": task_id, "status": "queued", "poll_url": f"/api/tasks/{task_id}"}
 
 
@@ -149,6 +174,7 @@ async def error_dictionary(code: str):
 
 
 def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> None:
+    task_started_at = perf_counter()
     task_store = app.state.task_store
     file_store = app.state.file_store
     compressor = app.state.compressor
@@ -158,8 +184,16 @@ def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> N
     successful_files: list[Path] = []
 
     task = task_store.load(task_id)
+    logger.info(
+        "%s event=task_processing_started task_id=%s files=%s backend=%s",
+        LOG_PREFIX,
+        task_id,
+        len(task["items"]),
+        compressor.backend_name,
+    )
     for item in task["items"]:
         stored_filename = item["stored_filename"]
+        file_started_at = perf_counter()
         task_store.update_current_item(task_id, item["filename"])
         task_store.update_item(task_id, stored_filename, {"status": "processing"})
 
@@ -184,6 +218,17 @@ def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> N
                     "error_message": None,
                 },
             )
+            logger.info(
+                "%s event=file_compressed task_id=%s file=%s backend=%s original_bytes=%s compressed_bytes=%s ratio=%s elapsed_ms=%s",
+                LOG_PREFIX,
+                task_id,
+                stored_filename,
+                compressor.backend_name,
+                original_size,
+                compressed_size,
+                ratio,
+                int((perf_counter() - file_started_at) * 1000),
+            )
         except CompressionError as exc:
             task_store.update_item(
                 task_id,
@@ -197,6 +242,15 @@ def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> N
                     "error_code": exc.code,
                     "error_message": exc.message,
                 },
+            )
+            logger.warning(
+                "%s event=file_compress_failed task_id=%s file=%s backend=%s error_code=%s elapsed_ms=%s",
+                LOG_PREFIX,
+                task_id,
+                stored_filename,
+                compressor.backend_name,
+                exc.code,
+                int((perf_counter() - file_started_at) * 1000),
             )
         except Exception:
             task_store.update_item(
@@ -212,13 +266,38 @@ def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> N
                     "error_message": "压缩服务暂时不可用，请稍后再试。",
                 },
             )
+            logger.exception(
+                "%s event=file_compress_failed task_id=%s file=%s backend=%s error_code=server_error elapsed_ms=%s",
+                LOG_PREFIX,
+                task_id,
+                stored_filename,
+                compressor.backend_name,
+                int((perf_counter() - file_started_at) * 1000),
+            )
 
     zip_download_path = None
     if len(successful_files) >= 2:
+        zip_started_at = perf_counter()
         zip_service.create_zip(task_id, successful_files)
         zip_download_path = file_store.build_zip_download_path(task_id)
+        logger.info(
+            "%s event=task_zip_created task_id=%s files=%s elapsed_ms=%s",
+            LOG_PREFIX,
+            task_id,
+            len(successful_files),
+            int((perf_counter() - zip_started_at) * 1000),
+        )
 
-    task_store.finalize(task_id, zip_download_path)
+    finalized_task = task_store.finalize(task_id, zip_download_path)
+    logger.info(
+        "%s event=task_processing_completed task_id=%s status=%s success=%s failed=%s total_elapsed_ms=%s",
+        LOG_PREFIX,
+        task_id,
+        finalized_task["status"],
+        finalized_task["summary"]["success"],
+        finalized_task["summary"]["failed"],
+        int((perf_counter() - task_started_at) * 1000),
+    )
 
 
 download_router = APIRouter(tags=["download"])

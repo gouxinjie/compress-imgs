@@ -28,6 +28,12 @@ class Compressor:
         if tinify and settings.tinify_api_key:
             tinify.key = settings.tinify_api_key
 
+    @property
+    def backend_name(self) -> str:
+        if tinify and self.settings.tinify_api_key:
+            return "tinify"
+        return "pillow"
+
     def compress(self, source_path: Path, target_path: Path) -> None:
         if tinify and self.settings.tinify_api_key:
             self._compress_with_tinify(source_path, target_path)
