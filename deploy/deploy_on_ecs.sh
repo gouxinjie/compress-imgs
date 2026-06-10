@@ -5,7 +5,8 @@ set -euo pipefail
 APP_DIR="${APP_DIR:-/var/www/compress-imgs}"
 SOURCE_DIR="${SOURCE_DIR:-$APP_DIR}"
 SERVICE_NAME="${SERVICE_NAME:-process-imgs}"
-PYTHON_BIN="${PYTHON_BIN:-python3}"
+PYTHON_BIN="${PYTHON_BIN:-python3.12}"
+EXPECTED_PYTHON_VERSION="${EXPECTED_PYTHON_VERSION:-3.12}"
 MANIFEST_NAME=".deploy-manifest"
 CURRENT_MANIFEST="${APP_DIR}/${MANIFEST_NAME}"
 NEW_MANIFEST="${SOURCE_DIR}/${MANIFEST_NAME}"
@@ -80,7 +81,7 @@ new_files = {
 }
 
 stale_files = sorted(old_files - new_files)
-stale_parents: set[Path] = set()
+stale_parents = set()
 
 for rel in stale_files:
     rel_path = Path(rel)
@@ -125,6 +126,18 @@ cd "${APP_DIR}"
 
 if [ ! -d ".venv" ]; then
   "${PYTHON_BIN}" -m venv .venv
+fi
+
+VENV_PYTHON_VERSION="$(
+  .venv/bin/python - <<'PY'
+import sys
+print(f"{sys.version_info.major}.{sys.version_info.minor}")
+PY
+)"
+
+if [ "${VENV_PYTHON_VERSION}" != "${EXPECTED_PYTHON_VERSION}" ]; then
+  echo "Existing .venv uses Python ${VENV_PYTHON_VERSION}, expected ${EXPECTED_PYTHON_VERSION}. Recreate /var/www/compress-imgs/.venv with ${PYTHON_BIN} and rerun deployment." >&2
+  exit 1
 fi
 
 .venv/bin/python -m pip install --upgrade pip

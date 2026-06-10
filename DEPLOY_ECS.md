@@ -105,7 +105,7 @@ GitHub Actions 只负责发版和重启服务，不能替代首台机器的初�
 
 ```bash
 sudo apt update
-sudo apt install -y python3 python3-venv python3-pip nginx git rsync
+sudo apt install -y python3.12 python3.12-venv nginx git rsync
 ```
 
 ### 4.2 创建统一的部署用户和部署目录
@@ -409,6 +409,9 @@ chmod 600 ~/.ssh/authorized_keys
 - 在 ECS 上执行 [deploy/deploy_on_ecs.sh](</D:/MyProjects/compress-imgs/deploy/deploy_on_ecs.sh>)
 - 重启 `process-imgs` 服务
 - 通过 `/api/health` 做重启后的健康检查
+- 强制要求 `.venv` 使用 Python `3.12`
+
+如果你之前已经用 Python `3.6` 或其他低版本创建过 `/var/www/compress-imgs/.venv`，需要先在 ECS 上把旧 `.venv` 处理掉，再重新部署。
 
 ## 13. 首次上线前建议手工跑一次
 
@@ -417,7 +420,7 @@ chmod 600 ~/.ssh/authorized_keys
 ```bash
 sudo -u deploy -H bash -lc '
   cd /var/www/compress-imgs &&
-  python3 -m venv .venv &&
+  python3.12 -m venv .venv &&
   .venv/bin/pip install -r requirements.txt &&
   .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 '
@@ -560,6 +563,21 @@ sudo -n systemctl restart process-imgs
 
 所以它是“目标 30 分钟清理”，不是精确到秒的定时删除。如果以后需要，可以再加独立 `cron` 或 systemd timer。
 
+### 5. 部署时提示 `.venv` 不是 Python 3.12
+
+说明 ECS 上已有旧版本虚拟环境。先在 ECS 上进入应用目录，处理旧 `.venv`，再重新跑部署。
+
+建议步骤：
+
+```bash
+cd /var/www/compress-imgs
+mv .venv .venv.py36.bak
+python3.12 -m venv .venv
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -r requirements.txt
+sudo systemctl restart process-imgs
+```
+
 ## 18. 当前方案的限制
 
 - 当前是单机部署，不适合直接横向扩容
@@ -573,7 +591,7 @@ sudo -n systemctl restart process-imgs
 
 上线前建议逐项确认：
 
-- ECS 已安装 Python / venv / Nginx / rsync
+- ECS 已安装 Python 3.12 / venv / Nginx / rsync
 - `/var/www/compress-imgs/.env` 已创建
 - `process-imgs.service` 已创建并可启动
 - `process-imgs.service` 运行用户是 `deploy`

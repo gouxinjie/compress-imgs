@@ -96,4 +96,4 @@ jobs:
 
           REMOTE_PORT="${ECS_PORT:-22}"
           ssh -p "${REMOTE_PORT}" "${ECS_USER}@${ECS_HOST}" \
-            "chmod +x '${STAGING_DIR}/deploy/deploy_on_ecs.sh' && APP_DIR='${APP_DIR}' SOURCE_DIR='${STAGING_DIR}' SERVICE_NAME='${SERVICE_NAME}' bash '${STAGING_DIR}/deploy/deploy_on_ecs.sh'"
+            "chmod +x '${STAGING_DIR}/deploy/deploy_on_ecs.sh' && APP_DIR='${APP_DIR}' SOURCE_DIR='${STAGING_DIR}' SERVICE_NAME='${SERVICE_NAME}' PYTHON_BIN='python3.12' EXPECTED_PYTHON_VERSION='3.12' bash '${STAGING_DIR}/deploy/deploy_on_ecs.sh'"
