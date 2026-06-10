@@ -18,12 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_DIR: /var/www/compress-imgs
-      SERVICE_NAME: process-imgs
+      SERVICE_NAME: compress-imgs
       STAGING_DIR: /var/www/compress-imgs/.deploy-work/${{ github.run_id }}-${{ github.sha }}
       ECS_HOST: ${{ secrets.ECS_HOST }}
       ECS_PORT: ${{ secrets.ECS_PORT }}
       ECS_USER: ${{ secrets.ECS_USER }}
       ECS_SSH_PRIVATE_KEY: ${{ secrets.ECS_SSH_PRIVATE_KEY }}
+      ECS_SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -96,4 +97,4 @@ jobs:
 
           REMOTE_PORT="${ECS_PORT:-22}"
           ssh -p "${REMOTE_PORT}" "${ECS_USER}@${ECS_HOST}" \
-            "chmod +x '${STAGING_DIR}/deploy/deploy_on_ecs.sh' && APP_DIR='${APP_DIR}' SOURCE_DIR='${STAGING_DIR}' SERVICE_NAME='${SERVICE_NAME}' PYTHON_BIN='python3.12' EXPECTED_PYTHON_VERSION='3.12' bash '${STAGING_DIR}/deploy/deploy_on_ecs.sh'"
+            "chmod +x '${STAGING_DIR}/deploy/deploy_on_ecs.sh' && APP_DIR='${APP_DIR}' SOURCE_DIR='${STAGING_DIR}' SERVICE_NAME='${ECS_SERVICE_NAME:-$SERVICE_NAME}' PYTHON_BIN='python3.12' EXPECTED_PYTHON_VERSION='3.12' bash '${STAGING_DIR}/deploy/deploy_on_ecs.sh'"

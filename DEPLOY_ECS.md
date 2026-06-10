@@ -26,8 +26,8 @@
 
 推荐访问地址：
 
-- 首页：`https://process-imgs.gouxinjie.com/`
-- 健康检查：`https://process-imgs.gouxinjie.com/api/health`
+- 首页：`https://compress-imgs.gouxinjie.com/`
+- 健康检查：`https://compress-imgs.gouxinjie.com/api/health`
 
 如果临时还没配域名，也可以先用公网 IP 验证：
 
@@ -49,7 +49,7 @@
 5. 服务器把代码发布到 `/var/www/compress-imgs`
 6. 仅删除“上一次由仓库管理、这次已不存在”的旧文件
 7. 安装或更新 Python 依赖
-8. 重启 `process-imgs` systemd 服务
+8. 重启 `compress-imgs` systemd 服务
 9. 轮询 `/api/health`，确认服务真的已经起来
 
 仓库里已经提供：
@@ -71,7 +71,7 @@
 
 你的 ECS 已经在用二级域名区分项目，那么这个项目继续沿用同样方式即可：
 
-- `process-imgs.gouxinjie.com`
+- `compress-imgs.gouxinjie.com`
 
 你只需要新增：
 
@@ -129,7 +129,7 @@ sudo chown -R deploy:deploy /var/www/compress-imgs
 后续要保持一致：
 
 - GitHub Actions 用 `deploy` 这个账号 SSH 到 ECS
-- `process-imgs.service` 也用 `deploy` 运行
+- `compress-imgs.service` 也用 `deploy` 运行
 - `/var/www/compress-imgs` 目录也归 `deploy` 所有
 
 ### 4.3 手工创建生产 `.env`
@@ -176,7 +176,7 @@ sudo -u deploy -H bash -lc 'mkdir -p /var/www/compress-imgs/work/tmp'
 创建服务文件：
 
 ```bash
-sudo nano /etc/systemd/system/process-imgs.service
+sudo nano /etc/systemd/system/compress-imgs.service
 ```
 
 写入：
@@ -209,14 +209,14 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable process-imgs
-sudo systemctl start process-imgs
+sudo systemctl enable compress-imgs
+sudo systemctl start compress-imgs
 ```
 
 检查状态：
 
 ```bash
-sudo systemctl status process-imgs
+sudo systemctl status compress-imgs
 ```
 
 ## 6. 给部署用户开放重启服务权限
@@ -224,8 +224,8 @@ sudo systemctl status process-imgs
 GitHub Actions 通过 SSH 登录 ECS 后，需要执行：
 
 ```bash
-sudo systemctl restart process-imgs
-sudo systemctl status process-imgs
+sudo systemctl restart compress-imgs
+sudo systemctl status compress-imgs
 ```
 
 所以部署用户需要有免密码执行这两个命令的权限。
@@ -239,7 +239,7 @@ sudo visudo
 加入一行，假设部署用户是 `deploy`：
 
 ```text
-deploy ALL=NOPASSWD: /bin/systemctl restart process-imgs, /bin/systemctl status process-imgs
+deploy ALL=NOPASSWD: /bin/systemctl restart compress-imgs, /bin/systemctl status compress-imgs
 ```
 
 如果你的系统里 `systemctl` 路径不是 `/bin/systemctl`，先确认：
@@ -263,7 +263,7 @@ sudo nano /etc/nginx/sites-available/process-imgs
 ```nginx
 server {
     listen 80;
-    server_name process-imgs.gouxinjie.com;
+    server_name compress-imgs.gouxinjie.com;
 
     client_max_body_size 100M;
 
@@ -297,7 +297,7 @@ sudo apt install -y certbot python3-certbot-nginx
 申请证书：
 
 ```bash
-sudo certbot --nginx -d process-imgs.gouxinjie.com
+sudo certbot --nginx -d compress-imgs.gouxinjie.com
 ```
 
 验证续期：
@@ -309,7 +309,7 @@ sudo certbot renew --dry-run
 完成后访问：
 
 ```text
-https://process-imgs.gouxinjie.com/
+https://compress-imgs.gouxinjie.com/
 ```
 
 ## 9. 配置 ECS 安全组
@@ -364,6 +364,32 @@ deploy
 
 可选。默认 `22`。如果你 SSH 端口不是 22，再加这个 secret。
 
+### `ECS_SERVICE_NAME`
+
+可选。默认部署脚本会重启：
+
+```text
+compress-imgs
+```
+
+也就是 systemd unit：
+
+```text
+compress-imgs.service
+```
+
+如果你 ECS 上实际服务名不是这个，比如：
+
+```text
+compress-imgs.service
+```
+
+那就在 GitHub Secret 里新增：
+
+```text
+ECS_SERVICE_NAME=compress-imgs
+```
+
 注意：
 
 - `TINIFY_API_KEY` 不放 GitHub Secrets
@@ -407,7 +433,7 @@ chmod 600 ~/.ssh/authorized_keys
 - 不会覆盖 `work/tmp`
 - 会按发布清单删除“仓库里已删掉、服务器上仍残留”的旧受管文件
 - 在 ECS 上执行 [deploy/deploy_on_ecs.sh](</D:/MyProjects/compress-imgs/deploy/deploy_on_ecs.sh>)
-- 重启 `process-imgs` 服务
+- 重启 `compress-imgs` 服务
 - 通过 `/api/health` 做重启后的健康检查
 - 强制要求 `.venv` 使用 Python `3.12`
 
@@ -442,7 +468,7 @@ curl http://127.0.0.1:8000/api/health
 
 ```bash
 Ctrl + C
-sudo systemctl start process-imgs
+sudo systemctl start compress-imgs
 ```
 
 ## 14. 如何触发自动部署
@@ -467,8 +493,8 @@ Actions -> Deploy To ECS -> Run workflow
 
 如果已经配置好二级域名和 HTTPS：
 
-- `https://process-imgs.gouxinjie.com/`
-- `https://process-imgs.gouxinjie.com/api/health`
+- `https://compress-imgs.gouxinjie.com/`
+- `https://compress-imgs.gouxinjie.com/api/health`
 
 如果只是临时验证公网 IP：
 
@@ -486,7 +512,7 @@ Actions -> Deploy To ECS -> Run workflow
 例如：
 
 ```text
-https://process-imgs.gouxinjie.com/result/task_20260609_123456_ab12cd
+https://compress-imgs.gouxinjie.com/result/task_20260609_123456_ab12cd
 ```
 
 用户正常使用时不需要手输这个地址，前端会在压缩完成后给出“查看结果”入口。
@@ -512,8 +538,8 @@ GitHub -> Actions -> Deploy To ECS
 ### 看 ECS 服务日志
 
 ```bash
-sudo journalctl -u process-imgs -n 100 --no-pager
-sudo journalctl -u process-imgs -f
+sudo journalctl -u compress-imgs -n 100 --no-pager
+sudo journalctl -u compress-imgs -f
 ```
 
 ### 看 Nginx 日志
@@ -527,34 +553,46 @@ sudo tail -n 100 /var/log/nginx/error.log
 
 ### 1. GitHub Actions 能连上 ECS，但重启服务失败
 
-通常是部署用户没有 `sudo systemctl restart process-imgs` 权限。
+通常是部署用户没有 `sudo systemctl restart compress-imgs` 权限。
 
 先检查：
 
 ```bash
-sudo -n systemctl restart process-imgs
+sudo -n systemctl restart compress-imgs
 ```
 
 如果报权限错误，就回到第 6 节处理 sudoers。
 
-### 2. 工作流执行成功，但网站打不开
+### 2. GitHub Actions 报 `Unit compress-imgs.service not found`
+
+说明 ECS 上没有这个 systemd 服务，或者你实际创建的服务名不是 `compress-imgs`。
+
+你有两种处理方式：
+
+1. 按文档创建：
+   - `/etc/systemd/system/compress-imgs.service`
+2. 如果你实际用了别的服务名：
+   - 在 GitHub Secrets 里新增 `ECS_SERVICE_NAME`
+   - 值填你的真实服务名
+
+### 3. 工作流执行成功，但网站打不开
 
 检查：
 
-- `process-imgs` 服务是否正常运行
+- `compress-imgs` 服务是否正常运行
 - Nginx 是否正常
 - ECS 安全组是否放通 `80/443`
 - 域名是否已解析到 ECS 公网 IP
 - `/api/health` 是否可访问
 
-### 3. 上传时报 413
+### 4. 上传时报 413
 
 检查：
 
 - Nginx 是否配置了 `client_max_body_size 100M;`
 - `.env` 中 `MAX_REQUEST_SIZE_MB` 是否过小
 
-### 4. 文件为什么不是精确 30 分钟删除
+### 5. 文件为什么不是精确 30 分钟删除
 
 当前实现的清理触发时机是：
 
@@ -563,7 +601,7 @@ sudo -n systemctl restart process-imgs
 
 所以它是“目标 30 分钟清理”，不是精确到秒的定时删除。如果以后需要，可以再加独立 `cron` 或 systemd timer。
 
-### 5. 部署时提示 `.venv` 不是 Python 3.12
+### 6. 部署时提示 `.venv` 不是 Python 3.12
 
 说明 ECS 上已有旧版本虚拟环境。先在 ECS 上进入应用目录，处理旧 `.venv`，再重新跑部署。
 
@@ -575,7 +613,7 @@ mv .venv .venv.py36.bak
 python3.12 -m venv .venv
 .venv/bin/pip install --upgrade pip
 .venv/bin/pip install -r requirements.txt
-sudo systemctl restart process-imgs
+sudo systemctl restart compress-imgs
 ```
 
 ## 18. 当前方案的限制
@@ -593,13 +631,13 @@ sudo systemctl restart process-imgs
 
 - ECS 已安装 Python 3.12 / venv / Nginx / rsync
 - `/var/www/compress-imgs/.env` 已创建
-- `process-imgs.service` 已创建并可启动
-- `process-imgs.service` 运行用户是 `deploy`
+- `compress-imgs.service` 已创建并可启动
+- `compress-imgs.service` 运行用户是 `deploy`
 - `/var/www/compress-imgs` 目录归 `deploy:deploy`
 - 部署用户可 SSH 登录 ECS
 - 部署用户可免密码执行：
-  - `systemctl restart process-imgs`
-  - `systemctl status process-imgs`
+  - `systemctl restart compress-imgs`
+  - `systemctl status compress-imgs`
 - GitHub Secrets 已配置
 - Nginx 已生效
 - 安全组已开放 `80/443`

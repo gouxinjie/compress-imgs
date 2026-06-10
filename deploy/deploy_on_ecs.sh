@@ -4,7 +4,7 @@ set -euo pipefail
 
 APP_DIR="${APP_DIR:-/var/www/compress-imgs}"
 SOURCE_DIR="${SOURCE_DIR:-$APP_DIR}"
-SERVICE_NAME="${SERVICE_NAME:-process-imgs}"
+SERVICE_NAME="${SERVICE_NAME:-compress-imgs}"
 PYTHON_BIN="${PYTHON_BIN:-python3.12}"
 EXPECTED_PYTHON_VERSION="${EXPECTED_PYTHON_VERSION:-3.12}"
 MANIFEST_NAME=".deploy-manifest"
@@ -142,6 +142,14 @@ fi
 
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/pip install -r requirements.txt
+
+if ! sudo -n systemctl list-unit-files "${SERVICE_NAME}.service" --no-pager | grep -q "^${SERVICE_NAME}\\.service"; then
+  echo "Systemd unit not found: ${SERVICE_NAME}.service" >&2
+  echo "Create /etc/systemd/system/${SERVICE_NAME}.service on ECS, or set GitHub secret ECS_SERVICE_NAME to your existing service name." >&2
+  echo "Related service units on ECS:" >&2
+  sudo -n systemctl list-unit-files --type=service --no-pager | grep 'imgs\\.service' || true
+  exit 1
+fi
 
 sudo -n systemctl restart "${SERVICE_NAME}"
 sudo -n systemctl status "${SERVICE_NAME}" --no-pager
