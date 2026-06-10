@@ -6,12 +6,11 @@
 /var/www/compress-imgs
 ```
 
-本文档按你的实际场景编写：
+本文档只保留一种配置方式：
 
-- 同一台 ECS 上已经部署了其他项目
-- 站点通过二级域名区分
-- 当前项目域名为 `process-imgs.gouxinjie.com`
-- 生产密钥保存在 ECS 本机，不放进仓库
+- 代码通过 GitHub Actions 自动发布
+- 生产环境 `.env` 由你手工放到 ECS 本机
+- `TINIFY_API_KEY` 只保存在 ECS 本机 `.env`
 
 当前项目特征：
 
@@ -30,7 +29,7 @@
 - 首页：`https://process-imgs.gouxinjie.com/`
 - 健康检查：`https://process-imgs.gouxinjie.com/api/health`
 
-如果你临时还没配域名，也可以先用公网 IP 验证：
+如果临时还没配域名，也可以先用公网 IP 验证：
 
 - `http://ECS公网IP/`
 - `http://ECS公网IP/api/health`
@@ -41,7 +40,7 @@
 
 ## 2. 自动部署的整体流程
 
-这套自动化方案的流程是：
+流程是：
 
 1. 你把代码 push 到 GitHub 的 `main`
 2. GitHub Actions 触发部署工作流
@@ -70,12 +69,7 @@
 
 ### 二级域名
 
-你的 ECS 已经在用二级域名区分项目，例如：
-
-- `blog.gouxinjie.com`
-- `admin.gouxinjie.com`
-
-那么这个项目继续沿用同样方式即可：
+你的 ECS 已经在用二级域名区分项目，那么这个项目继续沿用同样方式即可：
 
 - `process-imgs.gouxinjie.com`
 
@@ -100,7 +94,7 @@
 
 注意：
 
-- 当前方案不需要把 `TINIFY_API_KEY` 放到 GitHub Secrets
+- `TINIFY_API_KEY` 不放 GitHub Secrets
 - `TINIFY_API_KEY` 只保存在 ECS 本机 `/var/www/compress-imgs/.env`
 
 ## 4. ECS 首次初始化
@@ -138,7 +132,7 @@ sudo chown -R deploy:deploy /var/www/compress-imgs
 - `process-imgs.service` 也用 `deploy` 运行
 - `/var/www/compress-imgs` 目录也归 `deploy` 所有
 
-### 4.3 创建运行环境文件
+### 4.3 手工创建生产 `.env`
 
 切换到部署用户后，在 ECS 上手工创建：
 
@@ -372,7 +366,7 @@ deploy
 
 注意：
 
-- 当前这套自动部署方案不需要配置 `TINIFY_API_KEY` 到 GitHub Secrets
+- `TINIFY_API_KEY` 不放 GitHub Secrets
 - `TINIFY_API_KEY` 只保存在 ECS 本机 `/var/www/compress-imgs/.env`
 
 ## 11. 给 GitHub Actions 准备 SSH Key
