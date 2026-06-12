@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}?v=20260612-mobile-result-card">
     {% block head %}{% endblock %}
   </head>
-  <body>
+  <body data-file-expire-minutes="{{ settings.file_expire_minutes }}">
     <div class="page-shell">
       <header class="site-header">
         <a class="brand" href="/">
@@ -44,7 +44,7 @@
       </div>
       {% block content %}{% endblock %}
     </div>
-    <script src="{{ url_for('static', path='js/common.js') }}?v=20260612-mobile-result-card" defer></script>
+    <script src="{{ url_for('static', path='js/common.js') }}?v=20260612-toast-expire-minutes" defer></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>
