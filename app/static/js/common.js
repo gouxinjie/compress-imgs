@@ -20,6 +20,9 @@
 
   let hideTimer = null;
   let hideCompleteTimer = null;
+  let enterCompleteTimer = null;
+  const enterDurationMs = 360;
+  const exitDurationMs = 260;
 
   function showToast(title, message) {
     if (hideTimer) {
@@ -30,18 +33,37 @@
       clearTimeout(hideCompleteTimer);
       hideCompleteTimer = null;
     }
+    if (enterCompleteTimer) {
+      clearTimeout(enterCompleteTimer);
+      enterCompleteTimer = null;
+    }
 
     toastTitle.textContent = title;
     toastMessage.textContent = message;
     toast.hidden = false;
+    toast.classList.remove("is-entering");
+    toast.classList.remove("is-hiding");
+    toast.classList.remove("is-visible");
+
+    // Force a fresh animation cycle so repeated taps still slide in from the right.
+    void toast.offsetWidth;
+
     toast.classList.add("is-visible");
+    toast.classList.add("is-entering");
+    enterCompleteTimer = window.setTimeout(() => {
+      toast.classList.remove("is-entering");
+      enterCompleteTimer = null;
+    }, enterDurationMs);
 
     hideTimer = window.setTimeout(() => {
+      toast.classList.remove("is-entering");
       toast.classList.remove("is-visible");
+      toast.classList.add("is-hiding");
       hideCompleteTimer = window.setTimeout(() => {
         toast.hidden = true;
+        toast.classList.remove("is-hiding");
         hideCompleteTimer = null;
-      }, 180);
+      }, exitDurationMs);
       hideTimer = null;
     }, 2200);
   }

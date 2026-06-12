@@ -71,7 +71,7 @@
     action.setAttribute("tabindex", "-1");
 
     if (isIconAction(action)) {
-      setActionIcon(action, label, action.dataset.downloadedIcon || "/assets/icon_check_circle.png");
+      setActionIcon(action, label, action.dataset.downloadedIcon || "/assets/icon_status_completed.png");
       return;
     }
 

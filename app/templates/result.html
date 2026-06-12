@@ -11,7 +11,10 @@
       <p>任务编号：{{ task["task_id"] }}</p>
     </div>
     <div class="result-hero-actions">
-      <a class="secondary-link" href="/?resume_task={{ task["task_id"] }}">继续压缩</a>
+      <a class="secondary-link" href="/?resume_task={{ task["task_id"] }}">
+        <img class="result-link-icon" src="/assets/icon_folder_heart.png" alt="" width="16" height="16">
+        <span>继续压缩</span>
+      </a>
       {% if task["zip_download_path"] %}
       <a
         class="primary-link"
@@ -99,7 +102,7 @@
           data-loading-text="下载中..."
           data-downloaded-text="已下载"
           data-default-icon="/assets/icon_download_action.png"
-          data-downloaded-icon="/assets/icon_check_circle.png"
+          data-downloaded-icon="/assets/icon_status_completed.png"
           aria-label="下载图片"
           title="下载图片"
         ><img class="result-download-icon-image" src="/assets/icon_download_action.png" alt="" width="18" height="18"><span class="sr-only">下载图片</span></a>
@@ -112,5 +115,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='js/result.js') }}"></script>
+<script src="{{ url_for('static', path='js/result.js') }}?v=20260612-result-download-icon"></script>
 {% endblock %}
