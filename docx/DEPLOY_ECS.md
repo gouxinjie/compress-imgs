@@ -26,8 +26,8 @@
 
 推荐访问地址：
 
-- 首页：`https://compress-imgs.gouxinjie.com/`
-- 健康检查：`https://compress-imgs.gouxinjie.com/api/health`
+- 首页：`http://compress-imgs.gouxinjie.com/`
+- 健康检查：`http://compress-imgs.gouxinjie.com/api/health`
 
 如果临时还没配域名，也可以先用公网 IP 验证：
 
