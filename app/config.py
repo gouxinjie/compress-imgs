@@ -88,7 +88,7 @@ def get_settings() -> Settings:
         max_request_size_mb=int(os.getenv("MAX_REQUEST_SIZE_MB", "100")),
         temp_dir=BASE_DIR / os.getenv("TEMP_DIR", "work/tmp"),
         file_expire_minutes=int(os.getenv("FILE_EXPIRE_MINUTES", "30")),
-        poll_interval_ms=int(os.getenv("POLL_INTERVAL_MS", "1000")),
+        poll_interval_ms=int(os.getenv("POLL_INTERVAL_MS", "2500")),
         rate_limit_per_minute=int(os.getenv("RATE_LIMIT_PER_MINUTE", "5")),
         allowed_extensions=("png", "jpg", "jpeg", "webp"),
     )

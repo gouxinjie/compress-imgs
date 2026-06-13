@@ -20,7 +20,7 @@ def build_settings(temp_dir: Path, *, tinify_api_key: str = "") -> Settings:
         max_request_size_mb=100,
         temp_dir=temp_dir,
         file_expire_minutes=30,
-        poll_interval_ms=1000,
+        poll_interval_ms=2500,
         rate_limit_per_minute=5,
         allowed_extensions=("png", "jpg", "jpeg", "webp"),
     )
@@ -43,7 +43,7 @@ class FakeTinifyClient:
 
 
 class CompressorTests(unittest.TestCase):
-    def test_compress_with_pillow_returns_local_timing(self) -> None:
+    def test_compress_with_pillow_writes_target_file(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             source_path = temp_path / "source.png"
@@ -51,15 +51,11 @@ class CompressorTests(unittest.TestCase):
             Image.new("RGB", (32, 32), color=(255, 0, 0)).save(source_path, format="PNG")
 
             compressor = compressor_module.Compressor(build_settings(temp_path))
-            metrics = compressor.compress(source_path, target_path)
+            compressor.compress(source_path, target_path)
 
-            self.assertEqual(metrics.backend, "pillow")
-            self.assertIsNotNone(metrics.local_elapsed_ms)
-            self.assertIsNone(metrics.shrink_elapsed_ms)
-            self.assertIsNone(metrics.download_elapsed_ms)
             self.assertTrue(target_path.exists())
 
-    def test_compress_with_tinify_returns_phase_timings(self) -> None:
+    def test_compress_with_tinify_writes_target_file(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             source_path = temp_path / "source.png"
@@ -69,12 +65,8 @@ class CompressorTests(unittest.TestCase):
             fake_tinify = FakeTinifyClient()
             with patch.object(compressor_module, "tinify", fake_tinify):
                 compressor = compressor_module.Compressor(build_settings(temp_path, tinify_api_key="test-key"))
-                metrics = compressor.compress(source_path, target_path)
+                compressor.compress(source_path, target_path)
 
-            self.assertEqual(metrics.backend, "tinify")
-            self.assertIsNotNone(metrics.shrink_elapsed_ms)
-            self.assertIsNotNone(metrics.download_elapsed_ms)
-            self.assertIsNone(metrics.local_elapsed_ms)
             self.assertTrue(target_path.exists())
 
 

@@ -173,36 +173,6 @@ async def error_dictionary(code: str):
     return JSONResponse({"code": code})
 
 
-def _log_compression_metrics(task_id: str, filename: str, backend: str, metrics) -> None:
-    if metrics.shrink_elapsed_ms is not None:
-        logger.info(
-            "%s event=file_compress_phase task_id=%s file=%s backend=%s phase=shrink_request elapsed_ms=%s",
-            LOG_PREFIX,
-            task_id,
-            filename,
-            backend,
-            metrics.shrink_elapsed_ms,
-        )
-    if metrics.download_elapsed_ms is not None:
-        logger.info(
-            "%s event=file_compress_phase task_id=%s file=%s backend=%s phase=result_download elapsed_ms=%s",
-            LOG_PREFIX,
-            task_id,
-            filename,
-            backend,
-            metrics.download_elapsed_ms,
-        )
-    if metrics.local_elapsed_ms is not None:
-        logger.info(
-            "%s event=file_compress_phase task_id=%s file=%s backend=%s phase=local_compress elapsed_ms=%s",
-            LOG_PREFIX,
-            task_id,
-            filename,
-            backend,
-            metrics.local_elapsed_ms,
-        )
-
-
 def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> None:
     task_started_at = perf_counter()
     task_store = app.state.task_store
@@ -230,12 +200,11 @@ def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> N
         source_path = upload_dir / stored_filename
         target_path = compressed_dir / stored_filename
         try:
-            metrics = compressor.compress(source_path, target_path)
+            compressor.compress(source_path, target_path)
             compressed_size = target_path.stat().st_size
             original_size = source_path.stat().st_size
             ratio = round(max((1 - (compressed_size / original_size)) * 100, 0), 2) if original_size else 0
             successful_files.append(target_path)
-            _log_compression_metrics(task_id, stored_filename, compressor.backend_name, metrics)
             task_store.update_item(
                 task_id,
                 stored_filename,
@@ -250,7 +219,7 @@ def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> N
                 },
             )
             logger.info(
-                "%s event=file_compressed task_id=%s file=%s backend=%s original_bytes=%s compressed_bytes=%s ratio=%s backend_elapsed_ms=%s elapsed_ms=%s",
+                "%s event=file_compressed task_id=%s file=%s backend=%s original_bytes=%s compressed_bytes=%s ratio=%s elapsed_ms=%s",
                 LOG_PREFIX,
                 task_id,
                 stored_filename,
@@ -258,7 +227,6 @@ def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> N
                 original_size,
                 compressed_size,
                 ratio,
-                metrics.total_elapsed_ms,
                 int((perf_counter() - file_started_at) * 1000),
             )
         except CompressionError as exc:
@@ -276,16 +244,12 @@ def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> N
                 },
             )
             logger.warning(
-                "%s event=file_compress_failed task_id=%s file=%s backend=%s error_code=%s phase=%s shrink_elapsed_ms=%s download_elapsed_ms=%s local_elapsed_ms=%s elapsed_ms=%s",
+                "%s event=file_compress_failed task_id=%s file=%s backend=%s error_code=%s elapsed_ms=%s",
                 LOG_PREFIX,
                 task_id,
                 stored_filename,
                 compressor.backend_name,
                 exc.code,
-                exc.details.get("phase"),
-                exc.details.get("shrink_elapsed_ms"),
-                exc.details.get("download_elapsed_ms"),
-                exc.details.get("local_elapsed_ms"),
                 int((perf_counter() - file_started_at) * 1000),
             )
         except Exception:
