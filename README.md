@@ -2,7 +2,7 @@
 
 一个基于 `FastAPI + Jinja2` 的图片压缩 MVP，目标是快速做出类似 TinyPNG 的单机低并发版本。
 
-![preview](./compress.png)
+![preview](./imgs/compress.png)
 
 ## 功能
 
