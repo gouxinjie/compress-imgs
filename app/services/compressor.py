@@ -35,13 +35,19 @@ class Compressor:
         return "pillow"
 
     def compress(self, source_path: Path, target_path: Path) -> None:
+        # HEIC/HEIF 经本地 Pillow 解码后转为 JPEG，与源格式不同，
+        # 不可在“压缩后更大”时回退为原图（否则内容 HEIC、文件名 JPG，下载出错）。
+        is_heic = source_path.suffix.lower() in {".heic", ".heif"}
+
         if tinify and self.settings.tinify_api_key:
             self._compress_with_tinify(source_path, target_path)
-            self._ensure_smaller_or_equal(source_path, target_path)
+            if not is_heic:
+                self._ensure_smaller_or_equal(source_path, target_path)
             return
 
         self._compress_with_pillow(source_path, target_path)
-        self._ensure_smaller_or_equal(source_path, target_path)
+        if not is_heic:
+            self._ensure_smaller_or_equal(source_path, target_path)
 
     def _compress_with_tinify(self, source_path: Path, target_path: Path) -> None:
         try:

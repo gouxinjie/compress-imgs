@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from time import perf_counter
 from pathlib import Path
 
@@ -16,6 +17,14 @@ from app.services.file_store import UploadLimitError
 router = APIRouter(prefix="/api", tags=["api"])
 logger = logging.getLogger("uvicorn.error")
 LOG_PREFIX = "[compress-task]"
+
+# 与 file_store.generate_task_id 格式保持一致，防止 task_id 路径穿越。
+TASK_ID_PATTERN = re.compile(r"^task_\d{8}_\d{6}_[0-9a-f]{6}$")
+
+
+def _validate_task_id(task_id: str) -> None:
+    if not TASK_ID_PATTERN.match(task_id):
+        raise HTTPException(status_code=400, detail="非法的任务标识。")
 
 
 async def _cleanup_partial_uploads(files: list[UploadFile], saved_paths: list[Path], upload_dir: Path, compressed_dir: Path) -> None:
@@ -310,6 +319,7 @@ download_router = APIRouter(tags=["download"])
 
 @download_router.get("/download/{task_id}/all.zip")
 async def download_zip(task_id: str, request: Request):
+    _validate_task_id(task_id)
     zip_path = request.app.state.settings.zips_dir / f"{task_id}.zip"
     if not zip_path.exists():
         raise HTTPException(status_code=404, detail="压缩包不存在或已过期。")
@@ -318,6 +328,7 @@ async def download_zip(task_id: str, request: Request):
 
 @download_router.get("/download/{task_id}/{filename}")
 async def download_single(task_id: str, filename: str, request: Request):
+    _validate_task_id(task_id)
     path = request.app.state.settings.compressed_dir / task_id / Path(filename).name
     if not path.exists():
         raise HTTPException(status_code=404, detail="文件不存在或已过期。")
