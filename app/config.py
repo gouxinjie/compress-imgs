@@ -90,5 +90,5 @@ def get_settings() -> Settings:
         file_expire_minutes=int(os.getenv("FILE_EXPIRE_MINUTES", "30")),
         poll_interval_ms=int(os.getenv("POLL_INTERVAL_MS", "2500")),
         rate_limit_per_minute=int(os.getenv("RATE_LIMIT_PER_MINUTE", "5")),
-        allowed_extensions=("png", "jpg", "jpeg", "webp"),
+        allowed_extensions=("png", "jpg", "jpeg", "webp", "heic", "heif"),
     )

@@ -447,8 +447,8 @@
     let totalBytes = 0;
     for (const file of files) {
       const ext = file.name.split(".").pop()?.toLowerCase() || "";
-      if (!["png", "jpg", "jpeg", "webp"].includes(ext)) {
-        return "仅支持 PNG、JPG、JPEG、WEBP。";
+      if (!["png", "jpg", "jpeg", "webp", "heic", "heif"].includes(ext)) {
+        return "仅支持 PNG、JPG、JPEG、WEBP、HEIC。";
       }
       if (file.size > config.maxFileSizeBytes) {
         return `单张图片不能超过 ${Math.round(config.maxFileSizeBytes / 1024 / 1024)} MB。`;

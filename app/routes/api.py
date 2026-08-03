@@ -84,7 +84,7 @@ async def create_compress_task(
                     status_code=400,
                     detail={
                         "code": "invalid_file_type",
-                        "message": "仅支持 PNG、JPG、JPEG、WEBP。",
+                        "message": "仅支持 PNG、JPG、JPEG、WEBP、HEIC。",
                     },
                 )
 
@@ -198,7 +198,12 @@ def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> N
         task_store.update_item(task_id, stored_filename, {"status": "processing"})
 
         source_path = upload_dir / stored_filename
-        target_path = compressed_dir / stored_filename
+        # HEIC/HEIF 经本地 Pillow 压缩后实际存为 JPEG，文件名后缀同步改为 .jpg，
+        # 避免“内容 JPEG、文件名 HEIC”带来的下载/再次上传问题。Tinify 后端保持原后缀。
+        result_filename = stored_filename
+        if compressor.backend_name == "pillow" and Path(stored_filename).suffix.lower() in {".heic", ".heif"}:
+            result_filename = Path(stored_filename).with_suffix(".jpg").name
+        target_path = compressed_dir / result_filename
         try:
             compressor.compress(source_path, target_path)
             compressed_size = target_path.stat().st_size
@@ -212,8 +217,8 @@ def process_task(app, task_id: str, upload_dir: Path, compressed_dir: Path) -> N
                     "status": "success",
                     "compressed_size": compressed_size,
                     "ratio": ratio,
-                    "download_path": file_store.build_download_path(task_id, stored_filename),
-                    "preview_path": file_store.build_download_path(task_id, stored_filename),
+                    "download_path": file_store.build_download_path(task_id, result_filename),
+                    "preview_path": file_store.build_download_path(task_id, result_filename),
                     "error_code": None,
                     "error_message": None,
                 },
